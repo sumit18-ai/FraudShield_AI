@@ -1,0 +1,21 @@
+{
+    "label_encoder_classes": [
+        "CASH_IN",
+        "CASH_OUT",
+        "DEBIT",
+        "PAYMENT",
+        "TRANSFER"
+    ],
+    "features": [
+        "step",
+        "type",
+        "amount",
+        "oldbalanceOrg",
+        "newbalanceOrig",
+        "oldbalanceDest",
+        "newbalanceDest",
+        "errorBalanceOrig",
+        "errorBalanceDest",
+        "is_high_amount_transfer"
+    ]
+}
