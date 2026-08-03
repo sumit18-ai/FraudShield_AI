@@ -15,7 +15,6 @@ services:
     env: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/dist
-    region: oregon
     plan: free
     routes:
       - type: rewrite
