@@ -1,0 +1,58 @@
+[
+    {
+        "Strategy": "No Oversampling (Baseline)",
+        "Threshold": 0.5,
+        "Accuracy": 0.9999,
+        "Precision": 0.9994,
+        "Recall (Detection Rate)": 0.997,
+        "F1-Score": 0.9982,
+        "ROC-AUC": 0.9991,
+        "PR-AUC": 0.9977,
+        "False Negatives (Missed Fraud)": 5,
+        "False Positives (False Alarms)": 1,
+        "True Positives (Caught Fraud)": 1638,
+        "True Negatives": 39999
+    },
+    {
+        "Strategy": "Standard SMOTE",
+        "Threshold": 0.5,
+        "Accuracy": 0.9998,
+        "Precision": 0.997,
+        "Recall (Detection Rate)": 0.997,
+        "F1-Score": 0.997,
+        "ROC-AUC": 0.9995,
+        "PR-AUC": 0.9981,
+        "False Negatives (Missed Fraud)": 5,
+        "False Positives (False Alarms)": 5,
+        "True Positives (Caught Fraud)": 1638,
+        "True Negatives": 39995
+    },
+    {
+        "Strategy": "Custom Omni-SMOTE (Adaptive)",
+        "Threshold": 0.5,
+        "Accuracy": 0.9999,
+        "Precision": 0.9994,
+        "Recall (Detection Rate)": 0.997,
+        "F1-Score": 0.9982,
+        "ROC-AUC": 0.9993,
+        "PR-AUC": 0.9976,
+        "False Negatives (Missed Fraud)": 5,
+        "False Positives (False Alarms)": 1,
+        "True Positives (Caught Fraud)": 1638,
+        "True Negatives": 39999
+    },
+    {
+        "Strategy": "Custom Omni-SMOTE + Tuned Threshold",
+        "Threshold": 0.9988,
+        "Accuracy": 0.9999,
+        "Precision": 1.0,
+        "Recall (Detection Rate)": 0.997,
+        "F1-Score": 0.9985,
+        "ROC-AUC": 0.9993,
+        "PR-AUC": 0.9976,
+        "False Negatives (Missed Fraud)": 5,
+        "False Positives (False Alarms)": 0,
+        "True Positives (Caught Fraud)": 1638,
+        "True Negatives": 40000
+    }
+]

@@ -17,5 +17,7 @@
         "errorBalanceOrig",
         "errorBalanceDest",
         "is_high_amount_transfer"
-    ]
+    ],
+    "sampling_strategy": "OmniSMOTE (Omni-Adaptive Hybrid Oversampling)",
+    "optimal_threshold": 0.9989
 }

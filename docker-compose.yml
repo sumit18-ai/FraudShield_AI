@@ -22,3 +22,4 @@ services:
       - backend
     environment:
       - PORT=3000
+      - NEXT_PUBLIC_API_URL=http://localhost:8008

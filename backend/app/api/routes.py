@@ -16,9 +16,10 @@ async def analyze_transaction(transaction: Transaction):
     # A. Preprocess
     raw_df, scaled_data = engine.preprocess_transaction(transaction.dict())
 
-    # B. Get Prediction Probability
+    # B. Get Prediction Probability and apply tuned decision threshold
+    threshold = engine.feature_metadata.get('optimal_threshold', 0.5) if engine.feature_metadata else 0.5
     risk_score = float(engine.model.predict_proba(scaled_data)[0][1])
-    decision = "Block" if risk_score > 0.5 else "Allow"
+    decision = "Block" if risk_score >= threshold else "Allow"
 
     # C. SHAP Explanation
     explanations = get_explanations(scaled_data, engine.feature_metadata['features'])

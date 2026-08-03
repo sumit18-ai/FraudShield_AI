@@ -1,0 +1,15 @@
+node_modules
+dist
+.next
+.git
+.vscode
+.env
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+.ipynb_checkpoints
+data/
+*.csv
+*.log
