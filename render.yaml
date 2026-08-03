@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: fraudshield-backend
+    env: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    region: oregon
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8008
+
+  - type: web
+    name: fraudshield-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    region: oregon
+    plan: free
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

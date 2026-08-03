@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Pearl Pastel & Royal Violet/Cyan — Reference Light Mode Default */
+    --pearl-bg: #F0F3FF;
+    --pearl-surface: #FFFFFF;
+    --pearl-card: #FFFFFF;
+    --pearl-violet: #7C3AED;
+    --pearl-cyan: #06B6D4;
+    --pearl-coral: #F97316;
+    --pearl-emerald: #10B981;
+    --pearl-text-primary: #0F172A;
+    --pearl-text-secondary: #475569;
+    --pearl-text-muted: #64748B;
+    --pearl-border: rgba(226, 232, 240, 0.9);
+    --pearl-border-hover: rgba(124, 58, 237, 0.35);
+    --pearl-shadow: 0 14px 40px -10px rgba(15, 23, 42, 0.06);
+    --pearl-glow: rgba(124, 58, 237, 0.08);
+    --cursor-x: 50%;
+    --cursor-y: 50%;
+  }
+
+  [data-theme="dark"] {
+    /* Deep Imperial Space — Dark Mode Equivalent */
+    --pearl-bg: #090D18;
+    --pearl-surface: #101726;
+    --pearl-card: #141D30;
+    --pearl-violet: #8B5CF6;
+    --pearl-cyan: #38BDF8;
+    --pearl-coral: #FB923C;
+    --pearl-emerald: #34D399;
+    --pearl-text-primary: #F8FAFC;
+    --pearl-text-secondary: #CBD5E1;
+    --pearl-text-muted: #94A3B8;
+    --pearl-border: rgba(255, 255, 255, 0.08);
+    --pearl-border-hover: rgba(139, 92, 246, 0.4);
+    --pearl-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.6);
+    --pearl-glow: rgba(139, 92, 246, 0.12);
+  }
+
+  body {
+    background-color: var(--pearl-bg);
+    color: var(--pearl-text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+}
+
+/* Atmospheric Ambient Background Halo System */
+.pearl-vacuum {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: 
+    radial-gradient(
+      900px circle at var(--cursor-x) var(--cursor-y),
+      var(--pearl-glow),
+      transparent 65%
+    ),
+    radial-gradient(
+      800px circle at 15% 15%,
+      rgba(124, 58, 237, 0.09),
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px circle at 85% 85%,
+      rgba(6, 182, 212, 0.09),
+      transparent 65%
+    );
+  transition: background 0.4s ease;
+}
+
+.mesh-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(124, 58, 237, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(124, 58, 237, 0.03) 1px, transparent 1px);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 60%, transparent 100%);
+}
+
+/* Reference Card Styling (24px Rounded Floating White Cards) */
+.glass-card {
+  background-color: var(--pearl-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--pearl-border);
+  border-radius: 24px;
+  box-shadow: var(--pearl-shadow);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card-interactive:hover {
+  border-color: var(--pearl-border-hover);
+  box-shadow: 0 20px 45px -10px rgba(124, 58, 237, 0.12);
+  transform: translateY(-2px);
+}
+
+.glass-pill {
+  background-color: var(--pearl-surface);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--pearl-border);
+  box-shadow: var(--pearl-shadow);
+  border-radius: 9999px;
+}
+
+/* Reference Royal Violet Primary Button */
+.pearl-btn-gradient {
+  background: linear-gradient(135deg, #7C3AED 0%, #6366F1 50%, #06B6D4 100%);
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 6px 25px rgba(124, 58, 237, 0.35);
+}
+
+.pearl-btn-gradient:hover {
+  background: linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%);
+  box-shadow: 0 8px 30px rgba(124, 58, 237, 0.45);
+}
+
+/* ECG Line Animation */
+@keyframes ecgPulse {
+  0% { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.ecg-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: ecgPulse 3s linear infinite;
+}
+
+/* Floating Input Animation */
+.floating-input:focus ~ .floating-label,
+.floating-input:not(:placeholder-shown) ~ .floating-label {
+  transform: translateY(-1.25rem) scale(0.85);
+  color: #7C3AED;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.25);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.6);
+}

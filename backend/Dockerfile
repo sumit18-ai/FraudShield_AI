@@ -16,4 +16,4 @@ COPY . .
 EXPOSE 8008
 
 # Start uvicorn binding to 0.0.0.0 so the container port is accessible externally
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8008"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8008}"]
