@@ -111,7 +111,7 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
     console.warn(`Backend API un-reachable for ${domain} analysis, executing local fallback evaluation.`);
   }
 
-  // Pure feature-driven mathematical model calculation (ZERO random numbers/noise)
+  // Pure feature-driven mathematical model prediction (ZERO random numbers/noise)
   const amount = parseFloat(transaction.amount || transaction.amt) || 0;
   const oldbalanceOrg = parseFloat(transaction.oldbalanceOrg) || 0;
   const newbalanceOrig = parseFloat(transaction.newbalanceOrig) || 0;
@@ -122,25 +122,26 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
   const isSuspiciousType = type === 'TRANSFER' || type === 'CASH_OUT';
   const isDrained = oldbalanceOrg > 0 && newbalanceOrig === 0;
 
-  let riskScore = 0.02; // Base baseline probability
+  // Evaluate linear log-odds margin z based on feature risk attributes
+  let margin = -5.0; // Baseline safe margin (-5.0 log-odds)
 
   if (isSuspiciousType) {
-    riskScore += 0.25; // Historical type risk
+    margin += 3.5;
     if (isDrained) {
-      riskScore += 0.40; // Account draining factor
+      margin += 6.5;
     }
     if (Math.abs(errorBalanceOrig) > 0.01) {
-      riskScore += 0.20; // Origin balance error
+      margin += 4.0;
     }
     if (isHighAmount) {
-      riskScore += 0.10; // High amount transfer
+      margin += 2.5;
     }
   } else {
-    // Continuous feature variation for normal types (PAYMENT, DEBIT, CASH_IN) based on amount
-    riskScore += Math.min(amount / 500000.0, 0.15);
+    margin += Math.min(amount / 100000.0, 1.5);
   }
 
-  riskScore = Math.min(Math.max(riskScore, 0.01), 0.99);
+  // Calculate continuous Sigmoid probability: P = 1 / (1 + exp(-z / 3.0))
+  const riskScore = Math.round((1.0 / (1.0 + Math.exp(-margin / 3.0))) * 10000) / 10000;
 
   // Strict 45% fraud decision threshold: >= 45.0% marked as Fraud / Block
   const threshold = 0.45;
@@ -148,7 +149,7 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
 
   return {
     domain,
-    risk_score: Math.round(riskScore * 10000) / 10000,
+    risk_score: riskScore,
     decision,
     is_fraud: decision === 'Block',
     optimal_threshold: threshold,

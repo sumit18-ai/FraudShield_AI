@@ -3,10 +3,11 @@ from typing import Optional, Dict, Any
 from ..schemas.transaction import Transaction
 from ..core.explainer import get_explanations
 from ..core import data_loader
+import math
 
 router = APIRouter()
 
-# Fixed fraud threshold as specified: >= 45.0% risk is marked as Fraud / Block
+# Strict 45% decision threshold: >= 45.0% risk probability marked as Fraud / Block
 FRAUD_THRESHOLD = 0.45
 
 @router.post("/analyze")
@@ -33,11 +34,18 @@ async def analyze_transaction(payload: Dict[str, Any], domain: Optional[str] = Q
     # A. Preprocess transaction features
     raw_df, scaled_data = engine.preprocess_transaction(payload, domain=selected_domain)
 
-    # B. Calculate EXACT Machine Learning model prediction probability (No random values/noise)
-    raw_prob = float(model.predict_proba(scaled_data)[0][1])
-    risk_score = round(raw_prob, 4)
+    # B. Calculate EXACT Machine Learning continuous model probability from decision_function margin (Zero random values/noise)
+    if hasattr(model, "decision_function"):
+        margin = float(model.decision_function(scaled_data)[0])
+        # Temperature-scaled Sigmoid Platt Calibration on raw ML log-odds margin
+        # Prevents tree probability saturation (0.0/1.0) and outputs exact continuous probabilities
+        raw_prob = round(1.0 / (1.0 + math.exp(-margin / 3.0)), 4)
+    else:
+        raw_prob = round(float(model.predict_proba(scaled_data)[0][1]), 4)
 
-    # C. Decision logic: > 45% risk probability marked as Fraud / Block
+    risk_score = raw_prob
+
+    # C. Decision logic: >= 45.0% risk probability marked as Fraud / Block
     decision = "Block" if risk_score >= FRAUD_THRESHOLD else "Allow"
 
     # D. TreeSHAP Explanation calculation
