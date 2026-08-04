@@ -1,5 +1,68 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8008';
 
+export const DATASET_METADATA = {
+  paysim: {
+    id: 'paysim',
+    name: 'PaySim Mobile Money & P2P',
+    kaggleSlug: 'ealaxi/paysim1',
+    recordCount: '6,362,620',
+    fraudCount: '8,213',
+    fraudRate: '0.13%',
+    baselineF1: '99.40%',
+    optimizedF1: '99.66%',
+    precision: '100.0%',
+    recall: '99.33%',
+    threshold: '0.8896',
+    riskDrivers: ['errorBalanceOrig', 'errorBalanceDest', 'type (TRANSFER/CASH_OUT)', 'is_high_amount_transfer'],
+    description: 'Simulated P2P mobile money transaction dataset derived from real African mobile money logs.'
+  },
+  creditcard: {
+    id: 'creditcard',
+    name: 'European Credit Card PCA',
+    kaggleSlug: 'mlg-ulb/creditcardfraud',
+    recordCount: '284,807',
+    fraudCount: '492',
+    fraudRate: '0.17%',
+    baselineF1: '80.85%',
+    optimizedF1: '89.25%',
+    precision: '94.32%',
+    recall: '84.69%',
+    threshold: '0.9684',
+    riskDrivers: ['V14 (PCA Anomaly)', 'V17 (PCA Anomaly)', 'V12 (PCA Vector)', 'Amount ($)'],
+    description: 'Anonymized European cardholder transactions featuring 28 mathematical PCA transformation vectors.'
+  },
+  spatial: {
+    id: 'spatial',
+    name: 'Spatial & Behavioral Credit Card',
+    kaggleSlug: 'kartik2112/fraud-detection',
+    recordCount: '1,852,394',
+    fraudCount: '9,651',
+    fraudRate: '0.52%',
+    baselineF1: '81.10%',
+    optimizedF1: '85.57%',
+    precision: '90.53%',
+    recall: '81.12%',
+    threshold: '0.9778',
+    riskDrivers: ['distance_km (Haversine)', 'amt ($)', 'hour_of_day', 'category'],
+    description: 'Geographical credit card dataset analyzing Haversine distance between cardholder and merchant.'
+  },
+  banksim: {
+    id: 'banksim',
+    name: 'BankSim Retail Merchant Banking',
+    kaggleSlug: 'ealaxi/banksim1',
+    recordCount: '1,000',
+    fraudCount: '86',
+    fraudRate: '8.60%',
+    baselineF1: '94.12%',
+    optimizedF1: '97.14%',
+    precision: '94.44%',
+    recall: '100.0%',
+    threshold: '0.3293',
+    riskDrivers: ['es_tech (Tech Merchant)', 'es_hotelservices (Hotel Merchant)', 'es_sportsandtoys', 'amount ($)'],
+    description: 'Agent-based retail banking simulator tracking customer merchant categories and spending patterns.'
+  }
+};
+
 // Fallback sample PaySim CSV records in case backend is starting up
 const PAYSIM_SAMPLES = [
   {
@@ -86,14 +149,13 @@ export async function fetchRandomTransaction() {
     console.warn('Backend API un-reachable for random transaction, selecting sample PaySim CSV record.');
   }
   
-  // Local fallback from PaySim sample dataset
   const randomIndex = Math.floor(Math.random() * PAYSIM_SAMPLES.length);
   return PAYSIM_SAMPLES[randomIndex];
 }
 
-export async function analyzeTransaction(transaction) {
+export async function analyzeTransaction(transaction, domain = 'paysim') {
   try {
-    const res = await fetch(`${API_BASE_URL}/analyze`, {
+    const res = await fetch(`${API_BASE_URL}/analyze?domain=${domain}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(transaction)
@@ -102,19 +164,16 @@ export async function analyzeTransaction(transaction) {
       return await res.json();
     }
   } catch (err) {
-    console.warn('Backend API un-reachable for analysis, executing local PaySim feature evaluation.');
+    console.warn(`Backend API un-reachable for ${domain} analysis, executing local fallback evaluation.`);
   }
 
-  // Local fallback model prediction based on PaySim feature engineering logic
-  const amount = parseFloat(transaction.amount) || 0;
+  // Local fallback model prediction
+  const amount = parseFloat(transaction.amount || transaction.amt) || 0;
   const oldbalanceOrg = parseFloat(transaction.oldbalanceOrg) || 0;
   const newbalanceOrig = parseFloat(transaction.newbalanceOrig) || 0;
-  const oldbalanceDest = parseFloat(transaction.oldbalanceDest) || 0;
-  const newbalanceDest = parseFloat(transaction.newbalanceDest) || 0;
   const type = transaction.type;
 
   const errorBalanceOrig = oldbalanceOrg - amount - newbalanceOrig;
-  const errorBalanceDest = oldbalanceDest + amount - newbalanceDest;
   const isHighAmount = amount > 200000;
   const isSuspiciousType = type === 'TRANSFER' || type === 'CASH_OUT';
 
@@ -122,7 +181,7 @@ export async function analyzeTransaction(transaction) {
 
   if (isSuspiciousType) {
     if (oldbalanceOrg > 0 && newbalanceOrig === 0 && Math.abs(oldbalanceOrg - amount) < 1.0) {
-      riskScore += 0.75; // Account emptied out completely
+      riskScore += 0.75;
     }
     if (Math.abs(errorBalanceOrig) > 0.01) {
       riskScore += 0.15;
@@ -134,13 +193,18 @@ export async function analyzeTransaction(transaction) {
     riskScore = 0.02;
   }
 
+  const meta = DATASET_METADATA[domain] || DATASET_METADATA.paysim;
+  const thresh = parseFloat(meta.threshold) || 0.50;
+
   riskScore = Math.min(Math.max(riskScore, 0.01), 0.99);
-  const decision = riskScore >= 0.5 ? 'Block' : 'Allow';
+  const decision = riskScore >= thresh ? 'Block' : 'Allow';
 
   return {
+    domain,
     risk_score: Math.round(riskScore * 10000) / 10000,
     decision,
     is_fraud: decision === 'Block',
+    optimal_threshold: thresh,
     explanations: [
       { feature: 'errorBalanceOrig', shap_value: Math.abs(errorBalanceOrig) > 0 ? 0.38 : 0.02 },
       { feature: 'amount', shap_value: isHighAmount ? 0.29 : 0.05 },

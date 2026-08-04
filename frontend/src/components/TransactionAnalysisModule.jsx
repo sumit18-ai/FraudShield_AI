@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Cpu, Zap, ShieldAlert, Sparkles, CheckCircle2, RefreshCw, 
-  AlertCircle, ShieldCheck, Upload, FileText, ArrowRight, Activity, Eye 
+  AlertCircle, ShieldCheck, Upload, FileText, ArrowRight, Activity, Eye, 
+  Database, ExternalLink, BarChart2, Layers, Sliders, Check 
 } from 'lucide-react';
-import { fetchRandomTransaction, analyzeTransaction } from '../lib/api';
+import { fetchRandomTransaction, analyzeTransaction, DATASET_METADATA } from '../lib/api';
 
-export const TransactionAnalysisModule = ({ onTriggerThreatShift, onNavigateTab }) => {
-  const [formData, setFormData] = useState({
+const SAMPLE_PAYLOADS = {
+  paysim: {
     step: 1,
     type: 'CASH_OUT',
     amount: 181.0,
@@ -18,7 +19,44 @@ export const TransactionAnalysisModule = ({ onTriggerThreatShift, onNavigateTab 
     oldbalanceDest: 0.0,
     newbalanceDest: 0.0,
     isFraud: 1
-  });
+  },
+  creditcard: {
+    Time: 544,
+    V1: -2.3122,
+    V2: 1.9519,
+    V3: -1.6098,
+    V4: 3.9979,
+    V14: -4.2893,
+    V17: -2.8301,
+    Amount: 149.62,
+    Class: 1
+  },
+  spatial: {
+    trans_date_trans_time: '2020-06-21 12:14:25',
+    amt: 529.00,
+    category: 'es_tech',
+    gender: 'M',
+    city_pop: 333497,
+    lat: 33.9659,
+    long: -80.9355,
+    merch_lat: 33.9863,
+    merch_long: -81.2007,
+    is_fraud: 1
+  },
+  banksim: {
+    step: 42,
+    age: '3',
+    gender: 'F',
+    category: 'es_hotelservices',
+    amount: 450.00,
+    merchant: 'M348934600',
+    fraud: 1
+  }
+};
+
+export const TransactionAnalysisModule = ({ onTriggerThreatShift, onNavigateTab }) => {
+  const [activeDomain, setActiveDomain] = useState('paysim');
+  const [formData, setFormData] = useState(SAMPLE_PAYLOADS.paysim);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -26,29 +64,38 @@ export const TransactionAnalysisModule = ({ onTriggerThreatShift, onNavigateTab 
   const [parsedRows, setParsedRows] = useState([]);
   const [selectedRowIndex, setSelectedRowIndex] = useState(null);
 
-  // Computed telemetry
-  const errorBalanceOrig = (parseFloat(formData.oldbalanceOrg) || 0) - (parseFloat(formData.amount) || 0) - (parseFloat(formData.newbalanceOrig) || 0);
-  const errorBalanceDest = (parseFloat(formData.oldbalanceDest) || 0) + (parseFloat(formData.amount) || 0) - (parseFloat(formData.newbalanceDest) || 0);
-  const isHighAmount = (parseFloat(formData.amount) || 0) > 200000;
+  const activeMeta = DATASET_METADATA[activeDomain] || DATASET_METADATA.paysim;
+
+  const handleDomainChange = (domainKey) => {
+    setActiveDomain(domainKey);
+    setFormData(SAMPLE_PAYLOADS[domainKey] || SAMPLE_PAYLOADS.paysim);
+    setAnalysisResult(null);
+    setParsedRows([]);
+    setCsvFileName('');
+  };
 
   const handleFetchRandom = async () => {
     setIsAnalyzing(true);
     setAnalysisResult(null);
     try {
-      const data = await fetchRandomTransaction();
-      if (data) {
-        setFormData({
-          step: data.step ?? 1,
-          type: data.type ?? 'TRANSFER',
-          amount: data.amount ?? 0,
-          nameOrig: data.nameOrig ?? '',
-          oldbalanceOrg: data.oldbalanceOrg ?? 0,
-          newbalanceOrig: data.newbalanceOrig ?? 0,
-          nameDest: data.nameDest ?? '',
-          oldbalanceDest: data.oldbalanceDest ?? 0,
-          newbalanceDest: data.newbalanceDest ?? 0,
-          isFraud: data.isFraud ?? undefined
-        });
+      if (activeDomain === 'paysim') {
+        const data = await fetchRandomTransaction();
+        if (data) {
+          setFormData({
+            step: data.step ?? 1,
+            type: data.type ?? 'TRANSFER',
+            amount: data.amount ?? 0,
+            nameOrig: data.nameOrig ?? '',
+            oldbalanceOrg: data.oldbalanceOrg ?? 0,
+            newbalanceOrig: data.newbalanceOrig ?? 0,
+            nameDest: data.nameDest ?? '',
+            oldbalanceDest: data.oldbalanceDest ?? 0,
+            newbalanceDest: data.newbalanceDest ?? 0,
+            isFraud: data.isFraud ?? undefined
+          });
+        }
+      } else {
+        setFormData(SAMPLE_PAYLOADS[activeDomain] || SAMPLE_PAYLOADS.paysim);
       }
     } catch (e) {
       console.error(e);
@@ -82,425 +129,281 @@ export const TransactionAnalysisModule = ({ onTriggerThreatShift, onNavigateTab 
 
       setParsedRows(rows);
       if (rows.length > 0) {
-        selectCsvRow(rows[0], 0);
+        setFormData(rows[0]);
+        setSelectedRowIndex(0);
       }
     };
     reader.readAsText(file);
   };
 
-  const selectCsvRow = (row, index) => {
-    setSelectedRowIndex(index);
-    setFormData({
-      step: parseInt(row.step || 1),
-      type: row.type || 'TRANSFER',
-      amount: parseFloat(row.amount || 0),
-      nameOrig: row.nameOrig || 'C000000000',
-      oldbalanceOrg: parseFloat(row.oldbalanceOrg || 0),
-      newbalanceOrig: parseFloat(row.newbalanceOrig || 0),
-      nameDest: row.nameDest || 'C000000000',
-      oldbalanceDest: parseFloat(row.oldbalanceDest || 0),
-      newbalanceDest: parseFloat(row.newbalanceDest || 0),
-      isFraud: row.isFraud !== undefined ? parseInt(row.isFraud) : undefined
-    });
-    setAnalysisResult(null);
-  };
-
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    setAnalysisResult(null);
-  };
-
-  const handleRunInference = async () => {
+  const handleRunInference = async (e) => {
+    e?.preventDefault();
     setIsAnalyzing(true);
+    setAnalysisResult(null);
+
     try {
-      const payload = {
-        step: parseInt(formData.step) || 1,
-        type: String(formData.type),
-        amount: parseFloat(formData.amount) || 0,
-        nameOrig: String(formData.nameOrig),
-        oldbalanceOrg: parseFloat(formData.oldbalanceOrg) || 0,
-        newbalanceOrig: parseFloat(formData.newbalanceOrig) || 0,
-        nameDest: String(formData.nameDest),
-        oldbalanceDest: parseFloat(formData.oldbalanceDest) || 0,
-        newbalanceDest: parseFloat(formData.newbalanceDest) || 0
-      };
+      const res = await analyzeTransaction(formData, activeDomain);
+      setAnalysisResult(res);
 
-      const result = await analyzeTransaction(payload);
-      setAnalysisResult(result);
-
-      if (onTriggerThreatShift) {
-        onTriggerThreatShift(result.is_fraud || result.decision === 'Block');
+      if ((res.decision === 'Block' || res.is_fraud) && onTriggerThreatShift) {
+        onTriggerThreatShift(
+          `HIGH RISK ${activeDomain.toUpperCase()} FRAUD INTERCEPTED`,
+          `Transaction risk score calculated at ${(res.risk_score * 100).toFixed(1)}% (Threshold: ${(res.optimal_threshold * 100).toFixed(1)}%). Decision: BLOCK.`
+        );
       }
     } catch (err) {
-      console.error('Analysis failed:', err);
+      console.error(err);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-mono">
       
-      {/* Top Banner: CSV Controls & Data Loader */}
+      {/* Domain Switcher Bar */}
       <div className="glass-card p-6 border-l-4 border-l-[#7C3AED]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Cpu className="w-5 h-5 text-[#7C3AED]" />
-              PAYSIM CSV LIVE TRANSACTION ANALYZER
+              <Database className="w-5 h-5 text-[#7C3AED]" />
+              MULTI-DOMAIN DATASET & MODEL INFERENCE
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">
-              INPUT OR INGEST TRANSACTIONS DIRECTLY FROM PAYSIM DATASET FOR LIVE ML INFERENCE & SHAP EXPLANATION
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              SELECT A FINANCIAL DOMAIN TO LOAD DOMAIN METRICS, OPTIMAL THRESHOLDS, & DEDICATED MODEL INFERENCE
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={handleFetchRandom}
-              disabled={isAnalyzing}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium text-xs shadow-md transition-all cursor-pointer disabled:opacity-50 font-mono"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
-              FETCH RANDOM PAYSIM ROW
-            </button>
-
-            <label className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/20 font-medium text-xs cursor-pointer border border-slate-200 dark:border-white/10 transition-all font-mono">
-              <Upload className="w-3.5 h-3.5 text-indigo-500" />
-              <span>{csvFileName ? `CSV: ${csvFileName}` : 'UPLOAD CSV FILE'}</span>
-              <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
-            </label>
-          </div>
-        </div>
-
-        {/* Optional Parsed Rows Bar if custom CSV uploaded */}
-        {parsedRows.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-slate-200/80 dark:border-white/5">
-            <div className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2 font-mono">
-              <FileText className="w-3.5 h-3.5 text-[#7C3AED]" />
-              SELECT ROW FROM UPLOADED CSV ({parsedRows.length} ROWS LOADED):
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-              {parsedRows.map((r, idx) => (
+          <div className="flex flex-wrap items-center gap-2">
+            {Object.values(DATASET_METADATA).map(ds => {
+              const isSelected = activeDomain === ds.id;
+              return (
                 <button
-                  key={idx}
-                  onClick={() => selectCsvRow(r, idx)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-mono whitespace-nowrap transition-all border ${
-                    selectedRowIndex === idx
-                      ? 'bg-[#7C3AED] text-white border-[#7C3AED]'
-                      : 'bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:bg-slate-100'
+                  key={ds.id}
+                  onClick={() => handleDomainChange(ds.id)}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    isSelected
+                      ? 'bg-[#7C3AED] text-white border-[#7C3AED] shadow-md ring-2 ring-violet-500/30'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10'
                   }`}
                 >
-                  Row {idx + 1}: {r.type || 'TX'} ${parseFloat(r.amount || 0).toLocaleString()}
+                  {isSelected && <Check className="w-3.5 h-3.5" />}
+                  {ds.name}
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Main Grid: Form Inputs & ML Output Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Left Column: PaySim Field Editor */}
-        <div className="lg:col-span-7 glass-card p-6">
-          <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-200/80 dark:border-white/5">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Activity className="w-4 h-4 text-[#7C3AED]" />
-              PaySim Transaction Features
-            </h3>
-            {formData.isFraud !== undefined && (
-              <span className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-bold ${
-                formData.isFraud === 1 
-                  ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
-                  : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-              }`}>
-                Ground Truth CSV Label: {formData.isFraud === 1 ? 'FRAUD (1)' : 'LEGIT (0)'}
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs">
-            
-            {/* Transaction Type */}
-            <div>
-              <label className="block text-slate-500 dark:text-slate-400 font-semibold mb-1">
-                Transaction Type (`type`)
-              </label>
-              <select
-                value={formData.type}
-                onChange={(e) => handleInputChange('type', e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+      {/* Dataset-Specific Domain Analysis Panel */}
+      <div className="glass-card p-6 border-t-4 border-t-indigo-500">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{activeMeta.name}</h3>
+              <a 
+                href={`https://www.kaggle.com/datasets/${activeMeta.kaggleSlug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-indigo-500 hover:text-indigo-400 flex items-center gap-1 font-bold"
               >
-                <option value="TRANSFER">TRANSFER</option>
-                <option value="CASH_OUT">CASH_OUT</option>
-                <option value="PAYMENT">PAYMENT</option>
-                <option value="DEBIT">DEBIT</option>
-                <option value="CASH_IN">CASH_IN</option>
-              </select>
+                Kaggle: {activeMeta.kaggleSlug} <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
-
-            {/* Amount */}
-            <div>
-              <label className="block text-slate-500 dark:text-slate-400 font-semibold mb-1">
-                Amount (`amount`)
-              </label>
-              <input
-                type="number"
-                value={formData.amount}
-                onChange={(e) => handleInputChange('amount', e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-              />
-            </div>
-
-            {/* Time Step */}
-            <div>
-              <label className="block text-slate-500 dark:text-slate-400 font-semibold mb-1">
-                Time Step (`step` / hour)
-              </label>
-              <input
-                type="number"
-                value={formData.step}
-                onChange={(e) => handleInputChange('step', e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-              />
-            </div>
-
-            {/* Origin ID */}
-            <div>
-              <label className="block text-slate-500 dark:text-slate-400 font-semibold mb-1">
-                Origin Account (`nameOrig`)
-              </label>
-              <input
-                type="text"
-                value={formData.nameOrig}
-                onChange={(e) => handleInputChange('nameOrig', e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-              />
-            </div>
-
-            {/* Origin Old Balance */}
-            <div>
-              <label className="block text-slate-500 dark:text-slate-400 font-semibold mb-1">
-                Origin Old Balance (`oldbalanceOrg`)
-              </label>
-              <input
-                type="number"
-                value={formData.oldbalanceOrg}
-                onChange={(e) => handleInputChange('oldbalanceOrg', e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-              />
-            </div>
-
-            {/* Origin New Balance */}
-            <div>
-              <label className="block text-slate-500 dark:text-slate-400 font-semibold mb-1">
-                Origin New Balance (`newbalanceOrig`)
-              </label>
-              <input
-                type="number"
-                value={formData.newbalanceOrig}
-                onChange={(e) => handleInputChange('newbalanceOrig', e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-              />
-            </div>
-
-            {/* Destination ID */}
-            <div>
-              <label className="block text-slate-500 dark:text-slate-400 font-semibold mb-1">
-                Destination Account (`nameDest`)
-              </label>
-              <input
-                type="text"
-                value={formData.nameDest}
-                onChange={(e) => handleInputChange('nameDest', e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-              />
-            </div>
-
-            {/* Destination Old Balance */}
-            <div>
-              <label className="block text-slate-500 dark:text-slate-400 font-semibold mb-1">
-                Destination Old Balance (`oldbalanceDest`)
-              </label>
-              <input
-                type="number"
-                value={formData.oldbalanceDest}
-                onChange={(e) => handleInputChange('oldbalanceDest', e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-              />
-            </div>
-
-            {/* Destination New Balance */}
-            <div>
-              <label className="block text-slate-500 dark:text-slate-400 font-semibold mb-1">
-                Destination New Balance (`newbalanceDest`)
-              </label>
-              <input
-                type="number"
-                value={formData.newbalanceDest}
-                onChange={(e) => handleInputChange('newbalanceDest', e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-              />
-            </div>
-
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activeMeta.description}</p>
           </div>
 
-          {/* Feature Engineering Live Telemetry Cards */}
-          <div className="mt-6 pt-4 border-t border-slate-200/80 dark:border-white/5 grid grid-cols-3 gap-3 font-mono text-[11px]">
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-              <span className="text-slate-400 block">errorBalanceOrig</span>
-              <span className={`font-bold ${Math.abs(errorBalanceOrig) > 0.01 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                {errorBalanceOrig.toFixed(2)}
-              </span>
+          <div className="flex items-center gap-4 text-xs">
+            <div className="px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/30 text-[#7C3AED]">
+              Optimal Threshold: <strong className="text-slate-900 dark:text-white">{activeMeta.threshold}</strong>
             </div>
-
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-              <span className="text-slate-400 block">errorBalanceDest</span>
-              <span className={`font-bold ${Math.abs(errorBalanceDest) > 0.01 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                {errorBalanceDest.toFixed(2)}
-              </span>
-            </div>
-
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-              <span className="text-slate-400 block">is_high_amount</span>
-              <span className={`font-bold ${isHighAmount ? 'text-rose-500' : 'text-slate-400'}`}>
-                {isHighAmount ? '1 (> $200k)' : '0'}
-              </span>
+            <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500">
+              Optimized F1-Score: <strong className="text-slate-900 dark:text-white">{activeMeta.optimizedF1}</strong>
             </div>
           </div>
-
-          {/* Submit Button */}
-          <div className="mt-6">
-            <button
-              onClick={handleRunInference}
-              disabled={isAnalyzing}
-              className="w-full py-3 px-6 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold text-sm tracking-wide shadow-lg shadow-violet-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {isAnalyzing ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>RUNNING ML MODEL INFERENCE...</span>
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4" />
-                  <span>RUN LIVE FRAUDSHIELD INFERENCE</span>
-                </>
-              )}
-            </button>
-          </div>
-
         </div>
 
-        {/* Right Column: Real-Time ML Decision & SHAP Telemetry */}
-        <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
-          
+        {/* Telemetry Metrics Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mt-4 text-xs">
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+            <span className="text-slate-400 text-[10px] block">Record Count</span>
+            <strong className="text-slate-900 dark:text-white text-sm">{activeMeta.recordCount}</strong>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+            <span className="text-slate-400 text-[10px] block">Fraud Cases</span>
+            <strong className="text-rose-500 text-sm">{activeMeta.fraudCount} ({activeMeta.fraudRate})</strong>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+            <span className="text-slate-400 text-[10px] block">Baseline F1 (`0.50`)</span>
+            <strong className="text-slate-500 text-sm">{activeMeta.baselineF1}</strong>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+            <span className="text-slate-400 text-[10px] block">Precision</span>
+            <strong className="text-emerald-500 text-sm">{activeMeta.precision}</strong>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+            <span className="text-slate-400 text-[10px] block">Recall</span>
+            <strong className="text-indigo-500 text-sm">{activeMeta.recall}</strong>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 col-span-2 sm:col-span-1">
+            <span className="text-slate-400 text-[10px] block">Primary Risk Drivers</span>
+            <span className="text-slate-800 dark:text-slate-200 font-bold text-[11px] truncate block">
+              {activeMeta.riskDrivers.slice(0, 2).join(', ')}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Grid: Transaction Input Form (Left 7 Cols) & Inference Results (Right 5 Cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Left Column: Form & CSV Upload */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="glass-card p-6">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-white/10">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-[#7C3AED]" />
+                {activeMeta.name} Transaction Form
+              </h3>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleFetchRandom}
+                  disabled={isAnalyzing}
+                  className="px-3 py-1.5 rounded-lg bg-violet-500/10 text-[#7C3AED] hover:bg-violet-500/20 text-xs font-bold border border-violet-500/30 transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                  Sample Row
+                </button>
+
+                <label className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 text-xs font-bold border border-slate-200 dark:border-white/10 cursor-pointer flex items-center gap-1">
+                  <Upload className="w-3.5 h-3.5 text-indigo-500" />
+                  Upload CSV
+                  <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+                </label>
+              </div>
+            </div>
+
+            {csvFileName && (
+              <div className="p-3 mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between text-xs text-indigo-500">
+                <span>Loaded CSV: <strong>{csvFileName}</strong> ({parsedRows.length} rows)</span>
+              </div>
+            )}
+
+            {/* Dynamic Form Inputs */}
+            <form onSubmit={handleRunInference} className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                {Object.entries(formData).map(([k, v]) => (
+                  <div key={k} className="space-y-1">
+                    <label className="text-[11px] text-slate-400 block font-bold">{k}</label>
+                    <input
+                      type={typeof v === 'number' ? 'number' : 'text'}
+                      step="any"
+                      value={v}
+                      onChange={(e) => setFormData({ ...formData, [k]: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-[#7C3AED]"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isAnalyzing}
+                className="w-full py-3 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-4"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    RUNNING {activeDomain.toUpperCase()} FRAUDSHIELD INFERENCE...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 fill-white" />
+                    RUN LIVE {activeDomain.toUpperCase()} FRAUDSHIELD INFERENCE
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Right Column: Inference Results & SHAP Breakdown */}
+        <div className="lg:col-span-5 space-y-6">
           {analysisResult ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-card p-6 flex-1 flex flex-col justify-between border-t-4 border-t-[#7C3AED]"
+              className="glass-card p-6 border-t-4 border-t-[#7C3AED] space-y-6"
             >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">
-                    Model Risk Assessment
-                  </span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold ${
-                    analysisResult.is_fraud || analysisResult.decision === 'Block'
-                      ? 'bg-rose-500/20 text-rose-500 border border-rose-500/40'
-                      : 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
-                  }`}>
-                    {analysisResult.decision?.toUpperCase() || (analysisResult.is_fraud ? 'BLOCK' : 'ALLOW')}
-                  </span>
-                </div>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#7C3AED]" />
+                  ML Inference Decision
+                </h3>
 
-                {/* Score Dial / Large Indicator */}
-                <div className="text-center my-6">
-                  <div className="text-5xl font-black font-mono tracking-tight text-slate-900 dark:text-white">
-                    {(analysisResult.risk_score * 100).toFixed(1)}%
-                  </div>
-                  <span className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1 block">
-                    PREDICTED FRAUD PROBABILITY
-                  </span>
-                </div>
-
-                {/* SHAP Explanations */}
-                {analysisResult.explanations && analysisResult.explanations.length > 0 && (
-                  <div className="space-y-3 font-mono text-xs mt-6 pt-4 border-t border-slate-200/80 dark:border-white/5">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-[#7C3AED]" />
-                        SHAP Feature Importance Factors
-                      </h4>
-
-                      {onNavigateTab && (
-                        <button
-                          onClick={() => onNavigateTab('explainability')}
-                          className="text-[11px] font-bold text-[#7C3AED] hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>DEEP WATERFALL ➔</span>
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      {analysisResult.explanations.map((exp, idx) => {
-                        const val = typeof exp.shap_value === 'number' ? exp.shap_value : parseFloat(exp.shap_value || 0);
-                        const pct = Math.min(Math.abs(val) * 200, 100);
-                        const isPositive = val >= 0;
-
-                        return (
-                          <div key={idx} className="space-y-1">
-                            <div className="flex items-center justify-between text-[11px]">
-                              <span className="text-slate-700 dark:text-slate-300 font-medium">
-                                {exp.feature}
-                              </span>
-                              <span className={isPositive ? 'text-rose-500 font-bold' : 'text-emerald-500 font-bold'}>
-                                {isPositive ? '+' : ''}{val.toFixed(3)}
-                              </span>
-                            </div>
-                            <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${isPositive ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                                style={{ width: `${Math.max(pct, 8)}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  analysisResult.is_fraud
+                    ? 'bg-rose-500/20 text-rose-500 border border-rose-500/40'
+                    : 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
+                }`}>
+                  {analysisResult.decision}
+                </span>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-200/80 dark:border-white/5 flex items-center justify-between text-[11px] font-mono">
-                <span className="text-slate-500">TreeSHAP Engine Active</span>
-                {onNavigateTab && (
-                  <button
-                    onClick={() => onNavigateTab('explainability')}
-                    className="text-[#7C3AED] font-bold flex items-center gap-1 hover:underline cursor-pointer"
-                  >
-                    <span>OPEN SHAP TAB</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
-                )}
+              <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                <div className="text-4xl font-black text-slate-900 dark:text-white">
+                  {(analysisResult.risk_score * 100).toFixed(1)}%
+                </div>
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  CALCULATED FRAUD PROBABILITY
+                </span>
+                <span className="text-[10px] text-indigo-500 mt-0.5 block">
+                  Domain Optimal Threshold: {(analysisResult.optimal_threshold * 100).toFixed(1)}%
+                </span>
               </div>
+
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <BarChart2 className="w-3.5 h-3.5 text-[#7C3AED]" />
+                  Top SHAP Risk Factors
+                </h4>
+
+                <div className="space-y-2 text-xs">
+                  {analysisResult.explanations?.map((exp, idx) => (
+                    <div key={idx} className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-between">
+                      <span className="font-bold text-slate-900 dark:text-white">{exp.feature}</span>
+                      <span className={`font-bold ${exp.shap_value > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                        {exp.shap_value > 0 ? '+' : ''}{exp.shap_value.toFixed(3)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {onNavigateTab && (
+                <button
+                  onClick={() => onNavigateTab('shap')}
+                  className="w-full py-2.5 rounded-xl bg-violet-500/10 text-[#7C3AED] hover:bg-violet-500/20 font-bold text-xs border border-violet-500/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Eye className="w-4 h-4" />
+                  INSPECT DETAILED SHAP WATERFALL
+                </button>
+              )}
             </motion.div>
           ) : (
-            <div className="glass-card p-8 flex flex-col items-center justify-center text-center flex-1 text-slate-400 font-mono text-xs">
-              <ShieldAlert className="w-12 h-12 text-slate-300 dark:text-slate-600 mb-3 animate-bounce" />
-              <p className="font-bold text-slate-700 dark:text-slate-300 text-sm">No Inference Result Yet</p>
-              <p className="max-w-xs mt-1 text-slate-500">
-                Click "RUN LIVE FRAUDSHIELD INFERENCE" or fetch a random PaySim row to execute model evaluation.
-              </p>
+            <div className="glass-card p-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
+              <Cpu className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-2 animate-bounce" />
+              <p className="font-bold text-slate-700 dark:text-slate-300">Ready for Inference</p>
+              <p className="text-slate-500 mt-1">Select a domain dataset above and click "Run Live Inference" to test predictions.</p>
             </div>
           )}
-
         </div>
 
       </div>
+
     </div>
   );
 };
