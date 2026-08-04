@@ -1,0 +1,37 @@
+{
+    "features": [
+        "step",
+        "age",
+        "gender",
+        "category",
+        "amount"
+    ],
+    "age_classes": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "U"
+    ],
+    "gender_classes": [
+        "E",
+        "F",
+        "M"
+    ],
+    "category_classes": [
+        "es_barsandrestaurants",
+        "es_fashion",
+        "es_food",
+        "es_health",
+        "es_hotelservices",
+        "es_hyper",
+        "es_sportsandtoys",
+        "es_tech",
+        "es_transportation",
+        "es_wellnessandbeauty"
+    ],
+    "optimal_threshold": 0.3293
+}

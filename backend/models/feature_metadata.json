@@ -1,11 +1,4 @@
 {
-    "label_encoder_classes": [
-        "CASH_IN",
-        "CASH_OUT",
-        "DEBIT",
-        "PAYMENT",
-        "TRANSFER"
-    ],
     "features": [
         "step",
         "type",
@@ -18,7 +11,12 @@
         "errorBalanceDest",
         "is_high_amount_transfer"
     ],
-    "sampling_strategy": "OmniSMOTE (Omni-Adaptive Hybrid Oversampling)",
-    "optimal_threshold": 0.8995,
-    "trained_on_full_dataset": true
+    "label_encoder_classes": [
+        "CASH_IN",
+        "CASH_OUT",
+        "DEBIT",
+        "PAYMENT",
+        "TRANSFER"
+    ],
+    "optimal_threshold": 0.8896
 }
