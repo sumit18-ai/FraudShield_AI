@@ -8,14 +8,14 @@ import {
 import { analyzeTransaction } from '../lib/api';
 
 const PAYSIM_LIVE_POOL = [
-  { step: 384, type: 'CASH_OUT', amount: 246853.57, nameOrig: 'C1141347701', oldbalanceOrg: 0.0, newbalanceOrig: 0.0, nameDest: 'C1565118802', oldbalanceDest: 474823.39, newbalanceDest: 721676.97, isFraud: 0 },
-  { step: 301, type: 'CASH_OUT', amount: 260537.86, nameOrig: 'C1500116410', oldbalanceOrg: 0.0, newbalanceOrig: 0.0, nameDest: 'C2075255678', oldbalanceDest: 13551586.42, newbalanceDest: 13812124.27, isFraud: 0 },
+  { step: 384, type: 'CASH_OUT', amount: 46853.57, nameOrig: 'C1141347701', oldbalanceOrg: 50000.0, newbalanceOrig: 3146.43, nameDest: 'C1565118802', oldbalanceDest: 474823.39, newbalanceDest: 521676.96, isFraud: 0 },
+  { step: 301, type: 'TRANSFER', amount: 160537.86, nameOrig: 'C1500116410', oldbalanceOrg: 160537.86, newbalanceOrig: 0.0, nameDest: 'C2075255678', oldbalanceDest: 13551586.42, newbalanceDest: 13712124.28, isFraud: 1 },
   { step: 210, type: 'CASH_IN', amount: 108665.75, nameOrig: 'C1566137702', oldbalanceOrg: 7731403.68, newbalanceOrig: 7840069.43, nameDest: 'C974983454', oldbalanceDest: 227317.12, newbalanceDest: 118651.37, isFraud: 0 },
   { step: 1, type: 'TRANSFER', amount: 181.0, nameOrig: 'C1300802870', oldbalanceOrg: 181.0, newbalanceOrig: 0.0, nameDest: 'C1538398422', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 1 },
-  { step: 230, type: 'PAYMENT', amount: 23975.99, nameOrig: 'C1088924630', oldbalanceOrg: 0.0, newbalanceOrig: 0.0, nameDest: 'M709715506', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
-  { step: 43, type: 'PAYMENT', amount: 3283.90, nameOrig: 'C1028433774', oldbalanceOrg: 0.0, newbalanceOrig: 0.0, nameDest: 'M2007079779', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
-  { step: 379, type: 'CASH_OUT', amount: 152138.78, nameOrig: 'C523442658', oldbalanceOrg: 7706.36, newbalanceOrig: 0.0, nameDest: 'C391770830', oldbalanceDest: 1046642.5, newbalanceDest: 1198781.28, isFraud: 0 },
-  { step: 4, type: 'TRANSFER', amount: 522334.78, nameOrig: 'C2033524523', oldbalanceOrg: 522334.78, newbalanceOrig: 0.0, nameDest: 'C38997010', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 1 }
+  { step: 230, type: 'PAYMENT', amount: 23975.99, nameOrig: 'C1088924630', oldbalanceOrg: 45000.0, newbalanceOrig: 21024.01, nameDest: 'M709715506', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
+  { step: 43, type: 'PAYMENT', amount: 3283.90, nameOrig: 'C1028433774', oldbalanceOrg: 12000.0, newbalanceOrig: 8716.10, nameDest: 'M2007079779', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
+  { step: 379, type: 'CASH_OUT', amount: 152138.78, nameOrig: 'C523442658', oldbalanceOrg: 152138.78, newbalanceOrig: 0.0, nameDest: 'C391770830', oldbalanceDest: 1046642.5, newbalanceDest: 1198781.28, isFraud: 1 },
+  { step: 4, type: 'DEBIT', amount: 4233.12, nameOrig: 'C2033524523', oldbalanceOrg: 8900.00, newbalanceOrig: 4666.88, nameDest: 'C38997010', oldbalanceDest: 1200.0, newbalanceDest: 5433.12, isFraud: 0 }
 ];
 
 export const LiveMonitoringModule = () => {
@@ -81,8 +81,7 @@ export const LiveMonitoringModule = () => {
         rawValue: `$${oldOrg.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
         shapValue: isDrained ? 0.124 : -0.080,
         isPositive: isDrained,
-        impactPct: isDrained ? '12.4%' : '8.0%',
-        explanation: isDrained 
+        impactPct: isDrained 
           ? 'Account drained completely to $0 balance in single step.'
           : 'Account retains residual balance.'
       },
@@ -139,11 +138,13 @@ export const LiveMonitoringModule = () => {
         if (isBlock) fraudCount++;
         volume += item.amount;
 
+        const riskScorePct = (res.risk_score * 100).toFixed(1);
+
         const txObj = {
           id,
           time: new Date(Date.now() - i * 3000).toTimeString().split(' ')[0],
           ...item,
-          risk: Math.round(res.risk_score * 100),
+          risk: riskScorePct,
           riskScore: res.risk_score,
           status: isBlock ? 'BLOCKED' : 'CLEARED',
           shapAttributions: computeDetailedShap(item, res),
@@ -173,18 +174,20 @@ export const LiveMonitoringModule = () => {
 
     const interval = setInterval(async () => {
       const raw = PAYSIM_LIVE_POOL[Math.floor(Math.random() * PAYSIM_LIVE_POOL.length)];
-      const tweakAmount = Math.round((raw.amount + (Math.random() * 50 - 25)) * 100) / 100;
+      const tweakAmount = Math.round((raw.amount + (Math.random() * 80 - 40)) * 100) / 100;
       const txPayload = { ...raw, amount: Math.max(tweakAmount, 10) };
 
       const res = await analyzeTransaction(txPayload);
       const isBlock = res.decision === 'Block' || res.is_fraud;
       const id = `tx-ps-${Math.floor(1000 + Math.random() * 9000)}`;
 
+      const riskScorePct = (res.risk_score * 100).toFixed(1);
+
       const newTx = {
         id,
         time: new Date().toTimeString().split(' ')[0],
         ...txPayload,
-        risk: Math.round(res.risk_score * 100),
+        risk: riskScorePct,
         riskScore: res.risk_score,
         status: isBlock ? 'BLOCKED' : 'CLEARED',
         shapAttributions: computeDetailedShap(txPayload, res),
@@ -206,7 +209,6 @@ export const LiveMonitoringModule = () => {
     ? ((metrics.totalFraud / metrics.totalProcessed) * 100).toFixed(1) 
     : '0.0';
 
-  const baseValue = 0.0129;
   const selRisk = selectedTransaction?.riskScore ?? 0.05;
 
   return (
@@ -265,7 +267,7 @@ export const LiveMonitoringModule = () => {
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
                   <Radio className="w-4 h-4 text-[#7C3AED] animate-pulse" />
-                  Live PaySim Feed (Click to Inspect SHAP)
+                  Live PaySim Stream (Continuous Risk Scores)
                 </h3>
                 <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
                   SELECT ANY STREAM TRANSACTION TO LOAD DETAILED SHAP WATERFALL
@@ -403,7 +405,7 @@ export const LiveMonitoringModule = () => {
                   {(selRisk * 100).toFixed(1)}%
                 </div>
                 <span className="text-[11px] text-slate-400 mt-1 block">
-                  PREDICTED FRAUD PROBABILITY
+                  CONTINUOUS FRAUD PROBABILITY
                 </span>
               </div>
 

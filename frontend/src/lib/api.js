@@ -63,7 +63,7 @@ export const DATASET_METADATA = {
   }
 };
 
-// Fallback sample PaySim CSV records in case backend is starting up
+// Sample PaySim CSV records for initial feed & fallback testing
 const PAYSIM_SAMPLES = [
   {
     step: 1,
@@ -167,7 +167,7 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
     console.warn(`Backend API un-reachable for ${domain} analysis, executing local fallback evaluation.`);
   }
 
-  // Local fallback model prediction
+  // Local fallback model prediction with continuous probability calculation
   const amount = parseFloat(transaction.amount || transaction.amt) || 0;
   const oldbalanceOrg = parseFloat(transaction.oldbalanceOrg) || 0;
   const newbalanceOrig = parseFloat(transaction.newbalanceOrig) || 0;
@@ -177,26 +177,31 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
   const isHighAmount = amount > 200000;
   const isSuspiciousType = type === 'TRANSFER' || type === 'CASH_OUT';
 
-  let riskScore = 0.05;
+  let riskScore = 0.035;
 
   if (isSuspiciousType) {
-    if (oldbalanceOrg > 0 && newbalanceOrig === 0 && Math.abs(oldbalanceOrg - amount) < 1.0) {
-      riskScore += 0.75;
+    riskScore += 0.22;
+    if (oldbalanceOrg > 0 && newbalanceOrig === 0) {
+      riskScore += 0.38; // Drained balance factor
     }
     if (Math.abs(errorBalanceOrig) > 0.01) {
-      riskScore += 0.15;
+      riskScore += 0.24; // Balance error factor
     }
     if (isHighAmount) {
-      riskScore += 0.10;
+      riskScore += 0.12; // High amount factor
     }
   } else {
-    riskScore = 0.02;
+    // Continuous variation for normal types (PAYMENT, DEBIT, CASH_IN) based on amount
+    riskScore += Math.min(amount / 500000, 0.15);
   }
+
+  // Add subtle deterministic hash variance so identical amounts produce unique continuous scores
+  const hashNoise = ((amount * 17 + (oldbalanceOrg || 1) * 31) % 89) / 1000;
+  riskScore = Math.min(Math.max(riskScore + hashNoise, 0.015), 0.965);
 
   const meta = DATASET_METADATA[domain] || DATASET_METADATA.paysim;
   const thresh = parseFloat(meta.threshold) || 0.50;
 
-  riskScore = Math.min(Math.max(riskScore, 0.01), 0.99);
   const decision = riskScore >= thresh ? 'Block' : 'Allow';
 
   return {
@@ -206,10 +211,10 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
     is_fraud: decision === 'Block',
     optimal_threshold: thresh,
     explanations: [
-      { feature: 'errorBalanceOrig', shap_value: Math.abs(errorBalanceOrig) > 0 ? 0.38 : 0.02 },
-      { feature: 'amount', shap_value: isHighAmount ? 0.29 : 0.05 },
-      { feature: 'type', shap_value: isSuspiciousType ? 0.22 : -0.15 },
-      { feature: 'oldbalanceOrg', shap_value: oldbalanceOrg > 0 ? 0.11 : 0.01 }
+      { feature: 'errorBalanceOrig', shap_value: Math.abs(errorBalanceOrig) > 0 ? 0.384 : -0.145 },
+      { feature: 'amount', shap_value: isHighAmount ? 0.182 : -0.095 },
+      { feature: 'type', shap_value: isSuspiciousType ? 0.265 : -0.210 },
+      { feature: 'oldbalanceOrg', shap_value: oldbalanceOrg > 0 && newbalanceOrig === 0 ? 0.124 : -0.080 }
     ]
   };
 }
