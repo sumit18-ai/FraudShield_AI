@@ -12,7 +12,7 @@ export const DATASET_METADATA = {
     optimizedF1: '99.66%',
     precision: '100.0%',
     recall: '99.33%',
-    threshold: '0.4500',
+    threshold: '0.6500',
     riskDrivers: ['errorBalanceOrig', 'errorBalanceDest', 'type (TRANSFER/CASH_OUT)', 'is_high_amount_transfer'],
     description: 'Simulated P2P mobile money transaction dataset derived from real African mobile money logs.'
   },
@@ -27,7 +27,7 @@ export const DATASET_METADATA = {
     optimizedF1: '89.25%',
     precision: '94.32%',
     recall: '84.69%',
-    threshold: '0.4500',
+    threshold: '0.6500',
     riskDrivers: ['V14 (PCA Anomaly)', 'V17 (PCA Anomaly)', 'V12 (PCA Vector)', 'Amount ($)'],
     description: 'Anonymized European cardholder transactions featuring 28 mathematical PCA transformation vectors.'
   },
@@ -42,7 +42,7 @@ export const DATASET_METADATA = {
     optimizedF1: '85.57%',
     precision: '90.53%',
     recall: '81.12%',
-    threshold: '0.4500',
+    threshold: '0.6500',
     riskDrivers: ['distance_km (Haversine)', 'amt ($)', 'hour_of_day', 'category'],
     description: 'Geographical credit card dataset analyzing Haversine distance between cardholder and merchant.'
   },
@@ -57,7 +57,7 @@ export const DATASET_METADATA = {
     optimizedF1: '97.14%',
     precision: '94.44%',
     recall: '100.0%',
-    threshold: '0.4500',
+    threshold: '0.6500',
     riskDrivers: ['es_tech (Tech Merchant)', 'es_hotelservices (Hotel Merchant)', 'es_sportsandtoys', 'amount ($)'],
     description: 'Agent-based retail banking simulator tracking customer merchant categories and spending patterns.'
   }
@@ -111,7 +111,7 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
     console.warn(`Backend API un-reachable for ${domain} analysis, executing local fallback evaluation.`);
   }
 
-  // Pure feature-driven mathematical model prediction (ZERO random numbers/noise)
+  // Local fallback prediction
   const amount = parseFloat(transaction.amount || transaction.amt) || 0;
   const oldbalanceOrg = parseFloat(transaction.oldbalanceOrg) || 0;
   const newbalanceOrig = parseFloat(transaction.newbalanceOrig) || 0;
@@ -122,37 +122,37 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
   const isSuspiciousType = type === 'TRANSFER' || type === 'CASH_OUT';
   const isDrained = oldbalanceOrg > 0 && newbalanceOrig === 0;
 
-  // Evaluate linear log-odds margin z based on feature risk attributes
-  let margin = -5.0; // Baseline safe margin (-5.0 log-odds)
+  let riskScore = 0.05;
 
   if (isSuspiciousType) {
-    margin += 3.5;
-    if (isDrained) {
-      margin += 6.5;
-    }
-    if (Math.abs(errorBalanceOrig) > 0.01) {
-      margin += 4.0;
-    }
-    if (isHighAmount) {
-      margin += 2.5;
-    }
+    riskScore += 0.25;
+    if (isDrained) riskScore += 0.40;
+    if (Math.abs(errorBalanceOrig) > 0.01) riskScore += 0.15;
+    if (isHighAmount) riskScore += 0.10;
   } else {
-    margin += Math.min(amount / 100000.0, 1.5);
+    riskScore += Math.min(amount / 500000.0, 0.15);
   }
 
-  // Calculate continuous Sigmoid probability: P = 1 / (1 + exp(-z / 3.0))
-  const riskScore = Math.round((1.0 / (1.0 + Math.exp(-margin / 3.0))) * 10000) / 10000;
+  riskScore = Math.min(Math.max(riskScore, 0.01), 0.99);
 
-  // Strict 45% fraud decision threshold: >= 45.0% marked as Fraud / Block
-  const threshold = 0.45;
-  const decision = riskScore >= threshold ? 'Block' : 'Allow';
+  let decision = 'Safe';
+  let status = 'SAFE';
+
+  if (riskScore > 0.65) {
+    decision = 'Fraud';
+    status = 'FRAUD';
+  } else if (riskScore >= 0.35) {
+    decision = 'Needs Review';
+    status = 'NEEDS_REVIEW';
+  }
 
   return {
     domain,
-    risk_score: riskScore,
+    raw_prob: Math.round(riskScore * 10000) / 10000,
+    risk_score: Math.round(riskScore * 10000) / 10000,
     decision,
-    is_fraud: decision === 'Block',
-    optimal_threshold: threshold,
+    status,
+    is_fraud: decision === 'Fraud',
     explanations: [
       { feature: 'errorBalanceOrig', shap_value: Math.abs(errorBalanceOrig) > 0 ? 0.384 : -0.145 },
       { feature: 'amount', shap_value: isHighAmount ? 0.182 : -0.095 },

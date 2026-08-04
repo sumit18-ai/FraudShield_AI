@@ -3,12 +3,8 @@ from typing import Optional, Dict, Any
 from ..schemas.transaction import Transaction
 from ..core.explainer import get_explanations
 from ..core import data_loader
-import math
 
 router = APIRouter()
-
-# Strict 45% decision threshold: >= 45.0% risk probability marked as Fraud / Block
-FRAUD_THRESHOLD = 0.45
 
 @router.post("/analyze")
 async def analyze_transaction(payload: Dict[str, Any], domain: Optional[str] = Query('paysim')):
@@ -34,19 +30,20 @@ async def analyze_transaction(payload: Dict[str, Any], domain: Optional[str] = Q
     # A. Preprocess transaction features
     raw_df, scaled_data = engine.preprocess_transaction(payload, domain=selected_domain)
 
-    # B. Calculate EXACT Machine Learning continuous model probability from decision_function margin (Zero random values/noise)
-    if hasattr(model, "decision_function"):
-        margin = float(model.decision_function(scaled_data)[0])
-        # Temperature-scaled Sigmoid Platt Calibration on raw ML log-odds margin
-        # Prevents tree probability saturation (0.0/1.0) and outputs exact continuous probabilities
-        raw_prob = round(1.0 / (1.0 + math.exp(-margin / 3.0)), 4)
+    # B. Get EXACT raw Machine Learning model prediction probability
+    raw_prob = float(model.predict_proba(scaled_data)[0][1])
+    risk_score = round(raw_prob, 4)
+
+    # C. 3-Tier Classification Decision: Safe (<35%), Needs Review (35%-65%), Fraud (>65%)
+    if risk_score > 0.65:
+        decision = "Fraud"
+        status = "FRAUD"
+    elif risk_score >= 0.35:
+        decision = "Needs Review"
+        status = "NEEDS_REVIEW"
     else:
-        raw_prob = round(float(model.predict_proba(scaled_data)[0][1]), 4)
-
-    risk_score = raw_prob
-
-    # C. Decision logic: >= 45.0% risk probability marked as Fraud / Block
-    decision = "Block" if risk_score >= FRAUD_THRESHOLD else "Allow"
+        decision = "Safe"
+        status = "SAFE"
 
     # D. TreeSHAP Explanation calculation
     explanations = get_explanations(scaled_data, meta['features']) if meta and 'features' in meta else []
@@ -54,10 +51,11 @@ async def analyze_transaction(payload: Dict[str, Any], domain: Optional[str] = Q
     # E. Return Response
     return {
         "domain": selected_domain,
+        "raw_prob": risk_score,
         "risk_score": risk_score,
         "decision": decision,
-        "is_fraud": decision == "Block",
-        "optimal_threshold": FRAUD_THRESHOLD,
+        "status": status,
+        "is_fraud": decision == "Fraud",
         "explanations": explanations
     }
 
@@ -67,8 +65,7 @@ def health_check():
     return {
         "status": "online", 
         "model_loaded": len(engine.domain_models) > 0,
-        "domains_loaded": list(engine.domain_models.keys()),
-        "fraud_threshold": FRAUD_THRESHOLD
+        "domains_loaded": list(engine.domain_models.keys())
     }
 
 @router.get("/transaction/random")

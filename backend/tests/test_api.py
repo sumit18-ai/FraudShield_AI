@@ -49,7 +49,8 @@ def test_analyze_transaction_legit():
     assert "is_fraud" in data
     assert "explanations" in data
     assert isinstance(data["risk_score"], float)
-    assert data["decision"] in ["Allow", "Block"]
+    assert data["decision"] in ["Safe", "Needs Review", "Fraud"]
+    assert data["status"] in ["SAFE", "NEEDS_REVIEW", "FRAUD"]
     assert isinstance(data["explanations"], list)
 
 def test_analyze_transaction_suspicious():
@@ -70,4 +71,5 @@ def test_analyze_transaction_suspicious():
     data = response.json()
     assert "risk_score" in data
     assert data["risk_score"] >= 0.0 and data["risk_score"] <= 1.0
-    assert data["decision"] in ["Allow", "Block"]
+    assert data["decision"] in ["Safe", "Needs Review", "Fraud"]
+    assert data["status"] in ["SAFE", "NEEDS_REVIEW", "FRAUD"]

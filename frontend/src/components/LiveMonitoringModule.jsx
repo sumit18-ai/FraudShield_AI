@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Radio, Pause, Play, ShieldAlert, Zap, Activity, CheckCircle2, 
   Sparkles, ArrowUpRight, ArrowDownRight, Eye, ShieldCheck, 
-  BarChart2, Info, Layers, RefreshCw 
+  BarChart2, Info, Layers, RefreshCw, AlertTriangle 
 } from 'lucide-react';
 import { analyzeTransaction } from '../lib/api';
 
@@ -27,6 +27,7 @@ export const LiveMonitoringModule = () => {
   const [metrics, setMetrics] = useState({
     totalProcessed: 0,
     totalFraud: 0,
+    totalReview: 0,
     totalVolume: 0
   });
 
@@ -127,17 +128,18 @@ export const LiveMonitoringModule = () => {
     const initializeFeed = async () => {
       const initialList = [];
       let fraudCount = 0;
+      let reviewCount = 0;
       let volume = 0;
 
       for (let i = 0; i < 6; i++) {
         const item = PAYSIM_LIVE_POOL[i % PAYSIM_LIVE_POOL.length];
         const res = await analyzeTransaction(item);
         
-        // Strict > 45% risk threshold logic
-        const isBlock = res.risk_score >= 0.45 || res.decision === 'Block' || res.is_fraud;
+        const decisionStr = res.decision || (res.risk_score > 0.65 ? 'Fraud' : res.risk_score >= 0.35 ? 'Needs Review' : 'Safe');
         const id = `tx-ps-${Math.floor(1000 + Math.random() * 9000)}`;
 
-        if (isBlock) fraudCount++;
+        if (decisionStr === 'Fraud') fraudCount++;
+        if (decisionStr === 'Needs Review') reviewCount++;
         volume += item.amount;
 
         const riskScorePct = (res.risk_score * 100).toFixed(1);
@@ -148,7 +150,8 @@ export const LiveMonitoringModule = () => {
           ...item,
           risk: riskScorePct,
           riskScore: res.risk_score,
-          status: isBlock ? 'BLOCKED (FRAUD)' : 'CLEARED (SAFE)',
+          decision: decisionStr,
+          status: decisionStr === 'Fraud' ? 'FRAUD' : decisionStr === 'Needs Review' ? 'NEEDS REVIEW' : 'SAFE',
           shapAttributions: computeDetailedShap(item, res),
           shapTags: computeInlineShap(item, res)
         };
@@ -164,6 +167,7 @@ export const LiveMonitoringModule = () => {
       setMetrics({
         totalProcessed: 6,
         totalFraud: fraudCount,
+        totalReview: reviewCount,
         totalVolume: volume
       });
     };
@@ -181,8 +185,7 @@ export const LiveMonitoringModule = () => {
 
       const res = await analyzeTransaction(txPayload);
       
-      // Strict > 45% risk threshold logic
-      const isBlock = res.risk_score >= 0.45 || res.decision === 'Block' || res.is_fraud;
+      const decisionStr = res.decision || (res.risk_score > 0.65 ? 'Fraud' : res.risk_score >= 0.35 ? 'Needs Review' : 'Safe');
       const id = `tx-ps-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const riskScorePct = (res.risk_score * 100).toFixed(1);
@@ -193,7 +196,8 @@ export const LiveMonitoringModule = () => {
         ...txPayload,
         risk: riskScorePct,
         riskScore: res.risk_score,
-        status: isBlock ? 'BLOCKED (FRAUD)' : 'CLEARED (SAFE)',
+        decision: decisionStr,
+        status: decisionStr === 'Fraud' ? 'FRAUD' : decisionStr === 'Needs Review' ? 'NEEDS REVIEW' : 'SAFE',
         shapAttributions: computeDetailedShap(txPayload, res),
         shapTags: computeInlineShap(txPayload, res)
       };
@@ -201,7 +205,8 @@ export const LiveMonitoringModule = () => {
       setTransactions(prev => [newTx, ...prev.slice(0, 8)]);
       setMetrics(prev => ({
         totalProcessed: prev.totalProcessed + 1,
-        totalFraud: prev.totalFraud + (isBlock ? 1 : 0),
+        totalFraud: prev.totalFraud + (decisionStr === 'Fraud' ? 1 : 0),
+        totalReview: prev.totalReview + (decisionStr === 'Needs Review' ? 1 : 0),
         totalVolume: prev.totalVolume + txPayload.amount
       }));
     }, 3000);
@@ -209,11 +214,8 @@ export const LiveMonitoringModule = () => {
     return () => clearInterval(interval);
   }, [isPaused]);
 
-  const liveFraudRate = metrics.totalProcessed > 0 
-    ? ((metrics.totalFraud / metrics.totalProcessed) * 100).toFixed(1) 
-    : '0.0';
-
   const selRisk = selectedTransaction?.riskScore ?? 0.05;
+  const selDecision = selectedTransaction?.decision || (selRisk > 0.65 ? 'Fraud' : selRisk >= 0.35 ? 'Needs Review' : 'Safe');
 
   return (
     <div className="space-y-6 font-mono">
@@ -228,26 +230,27 @@ export const LiveMonitoringModule = () => {
             <span>{metrics.totalProcessed}</span>
             <Activity className="w-4 h-4 text-[#7C3AED] animate-pulse" />
           </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">Live Ingestion Counter</span>
+          <span className="text-[10px] text-slate-400 mt-1 block">Live Ingestion Feed</span>
         </div>
 
-        {/* Counter 2: Total Fraud Cases Intercepted (Threshold > 45%) */}
+        {/* Counter 2: Total Fraud Cases (>65% Risk) */}
         <div className="glass-card p-5 border-l-4 border-l-rose-500">
-          <span className="text-xs text-slate-400 block mb-1">Total Fraud Blocked (&gt; 45% Risk)</span>
+          <span className="text-xs text-slate-400 block mb-1">Total Flagged FRAUD (&gt; 65%)</span>
           <div className="text-3xl font-black text-rose-500 flex items-center gap-2">
             <span>{metrics.totalFraud}</span>
             <ShieldAlert className="w-4 h-4 text-rose-500" />
           </div>
-          <span className="text-[10px] text-rose-500/80 mt-1 block">Fraud Interceptions (&ge; 45.0%)</span>
+          <span className="text-[10px] text-rose-500/80 mt-1 block">High Risk Interceptions (&gt;65%)</span>
         </div>
 
-        {/* Counter 3: Live Fraud Rate % */}
+        {/* Counter 3: Needs Review Cases (35%-65% Risk) */}
         <div className="glass-card p-5 border-l-4 border-l-amber-500">
-          <span className="text-xs text-slate-400 block mb-1">Live Fraud Rate %</span>
-          <div className="text-3xl font-black text-amber-500">
-            {liveFraudRate}%
+          <span className="text-xs text-slate-400 block mb-1">Total NEEDS REVIEW (35%-65%)</span>
+          <div className="text-3xl font-black text-amber-500 flex items-center gap-2">
+            <span>{metrics.totalReview}</span>
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
           </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">Session Fraud Incidence</span>
+          <span className="text-[10px] text-amber-500/80 mt-1 block">Analyst Queue (35%-65%)</span>
         </div>
 
         {/* Counter 4: Total Stream Volume */}
@@ -271,10 +274,10 @@ export const LiveMonitoringModule = () => {
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
                   <Radio className="w-4 h-4 text-[#7C3AED] animate-pulse" />
-                  Live Stream (ML Probability &gt; 45% = Fraud)
+                  Live Ingestion Feed (Actual ML Probabilities)
                 </h3>
                 <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
-                  EXACT ML PROBABILITY CALCULATION (ZERO RANDOM NOISE)
+                  STATUS TIERS: SAFE (&lt;35%) • NEEDS REVIEW (35%-65%) • FRAUD (&gt;65%)
                 </p>
               </div>
 
@@ -295,8 +298,14 @@ export const LiveMonitoringModule = () => {
             <div className="space-y-2 text-xs">
               <AnimatePresence initial={false}>
                 {transactions.map((tx) => {
-                  const isBlocked = tx.riskScore >= 0.45;
+                  const dec = tx.decision || (tx.riskScore > 0.65 ? 'Fraud' : tx.riskScore >= 0.35 ? 'Needs Review' : 'Safe');
                   const isSelected = selectedTransaction?.id === tx.id;
+
+                  const badgeClass = dec === 'Fraud'
+                    ? 'bg-rose-500/20 text-rose-500 border-rose-500/40'
+                    : dec === 'Needs Review'
+                      ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
+                      : 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40';
 
                   return (
                     <motion.div
@@ -309,15 +318,17 @@ export const LiveMonitoringModule = () => {
                       className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
                         isSelected
                           ? 'ring-2 ring-[#7C3AED] bg-violet-500/15 border-[#7C3AED] shadow-md'
-                          : isBlocked
+                          : dec === 'Fraud'
                             ? 'bg-rose-500/10 border-rose-500/30 hover:bg-rose-500/15'
-                            : 'bg-slate-50/80 dark:bg-white/5 border-slate-200/80 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10'
+                            : dec === 'Needs Review'
+                              ? 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/15'
+                              : 'bg-slate-50/80 dark:bg-white/5 border-slate-200/80 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10'
                       }`}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded-lg font-bold text-[10px] ${
-                            isBlocked ? 'bg-rose-500 text-white' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                            dec === 'Fraud' ? 'bg-rose-500 text-white' : dec === 'Needs Review' ? 'bg-amber-500 text-white' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                           }`}>
                             {tx.type}
                           </div>
@@ -356,9 +367,7 @@ export const LiveMonitoringModule = () => {
 
                         <div className="text-right">
                           <div className="font-bold text-slate-900 dark:text-white">${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                          <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            isBlocked ? 'bg-rose-500/20 text-rose-500' : 'bg-emerald-500/20 text-emerald-500'
-                          }`}>
+                          <span className={`inline-block mt-0.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}`}>
                             {tx.risk}% • {tx.status}
                           </span>
                         </div>
@@ -371,8 +380,8 @@ export const LiveMonitoringModule = () => {
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Strict Decision Rule: &ge; 45.0% Risk = FRAUD / BLOCK</span>
-            <span>Click any transaction row for TreeSHAP analysis</span>
+            <span>3-Tier Classification: Safe (&lt;35%), Needs Review (35%-65%), Fraud (&gt;65%)</span>
+            <span>Click any row for TreeSHAP analysis</span>
           </div>
         </div>
 
@@ -395,11 +404,13 @@ export const LiveMonitoringModule = () => {
                 </div>
 
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  selRisk >= 0.45
+                  selDecision === 'Fraud'
                     ? 'bg-rose-500/20 text-rose-500 border border-rose-500/40'
-                    : 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
+                    : selDecision === 'Needs Review'
+                      ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40'
+                      : 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
                 }`}>
-                  {selRisk >= 0.45 ? 'FRAUD (BLOCKED)' : 'SAFE (CLEARED)'}
+                  {selectedTransaction.status}
                 </span>
               </div>
 
@@ -409,27 +420,27 @@ export const LiveMonitoringModule = () => {
                   {(selRisk * 100).toFixed(1)}%
                 </div>
                 <span className="text-[11px] text-slate-400 mt-1 block">
-                  CALCULATED ML FRAUD PROBABILITY
+                  ACTUAL ML FRAUD PROBABILITY
                 </span>
-                <span className="text-[10px] text-rose-500 mt-0.5 font-bold block">
-                  Fraud Threshold: 45.0% ({selRisk >= 0.45 ? 'EXCEEDED → FRAUD' : 'WITHIN SAFE LIMIT'})
+                <span className={`text-[10px] font-bold mt-0.5 block ${
+                  selDecision === 'Fraud' ? 'text-rose-500' : selDecision === 'Needs Review' ? 'text-amber-500' : 'text-emerald-500'
+                }`}>
+                  Classification: {selDecision.toUpperCase()} ({selRisk > 0.65 ? '>65% High Risk' : selRisk >= 0.35 ? '35%-65% Analyst Review' : '<35% Safe'})
                 </span>
               </div>
 
               {/* Baseline vs Prediction Range */}
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-400 text-[11px]">
-                  <span>Fraud Threshold: 45.0%</span>
-                  <span>Calculated Risk: {(selRisk * 100).toFixed(1)}%</span>
+                  <span>Safe (&lt;35%)</span>
+                  <span>Needs Review (35%-65%)</span>
+                  <span>Fraud (&gt;65%)</span>
                 </div>
                 <div className="w-full h-2.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden relative">
+                  <div className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-10" style={{ left: '35%' }} title="35% Review Boundary" />
+                  <div className="absolute top-0 bottom-0 w-0.5 bg-rose-500 z-10" style={{ left: '65%' }} title="65% Fraud Boundary" />
                   <div 
-                    className="absolute top-0 bottom-0 w-0.5 bg-slate-400 z-10" 
-                    style={{ left: '45%' }}
-                    title="45% Decision Threshold"
-                  />
-                  <div 
-                    className={`h-full rounded-full ${selRisk >= 0.45 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                    className={`h-full rounded-full ${selDecision === 'Fraud' ? 'bg-rose-500' : selDecision === 'Needs Review' ? 'bg-amber-500' : 'bg-emerald-500'}`}
                     style={{ width: `${Math.max(selRisk * 100, 2)}%` }}
                   />
                 </div>

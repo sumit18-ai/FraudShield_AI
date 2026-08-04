@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Cpu, Zap, ShieldAlert, Sparkles, CheckCircle2, RefreshCw, 
   AlertCircle, ShieldCheck, Upload, FileText, ArrowRight, Activity, Eye, 
-  Database, ExternalLink, BarChart2, Layers, Sliders, Check 
+  Database, ExternalLink, BarChart2, Layers, Sliders, Check, AlertTriangle 
 } from 'lucide-react';
 import { fetchRandomTransaction, analyzeTransaction, DATASET_METADATA } from '../lib/api';
 
@@ -145,10 +145,10 @@ export const TransactionAnalysisModule = ({ onTriggerThreatShift, onNavigateTab 
       const res = await analyzeTransaction(formData, activeDomain);
       setAnalysisResult(res);
 
-      if ((res.decision === 'Block' || res.is_fraud) && onTriggerThreatShift) {
+      if ((res.decision === 'Fraud' || res.status === 'FRAUD') && onTriggerThreatShift) {
         onTriggerThreatShift(
           `HIGH RISK ${activeDomain.toUpperCase()} FRAUD INTERCEPTED`,
-          `Transaction risk score calculated at ${(res.risk_score * 100).toFixed(1)}% (Threshold: ${(res.optimal_threshold * 100).toFixed(1)}%). Decision: BLOCK.`
+          `Transaction risk score calculated at ${(res.risk_score * 100).toFixed(1)}%. Classification: FRAUD.`
         );
       }
     } catch (err) {
@@ -170,7 +170,7 @@ export const TransactionAnalysisModule = ({ onTriggerThreatShift, onNavigateTab 
               MULTI-DOMAIN DATASET & MODEL INFERENCE
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              SELECT A FINANCIAL DOMAIN TO LOAD DOMAIN METRICS, OPTIMAL THRESHOLDS, & DEDICATED MODEL INFERENCE
+              SELECT A FINANCIAL DOMAIN TO LOAD DOMAIN METRICS & DEDICATED MODEL INFERENCE
             </p>
           </div>
 
@@ -215,9 +215,6 @@ export const TransactionAnalysisModule = ({ onTriggerThreatShift, onNavigateTab 
           </div>
 
           <div className="flex items-center gap-4 text-xs">
-            <div className="px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/30 text-[#7C3AED]">
-              Optimal Threshold: <strong className="text-slate-900 dark:text-white">{activeMeta.threshold}</strong>
-            </div>
             <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500">
               Optimized F1-Score: <strong className="text-slate-900 dark:text-white">{activeMeta.optimizedF1}</strong>
             </div>
@@ -341,15 +338,17 @@ export const TransactionAnalysisModule = ({ onTriggerThreatShift, onNavigateTab 
               <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#7C3AED]" />
-                  ML Inference Decision
+                  ML Model Classification
                 </h3>
 
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  analysisResult.is_fraud
+                  analysisResult.decision === 'Fraud' || analysisResult.status === 'FRAUD'
                     ? 'bg-rose-500/20 text-rose-500 border border-rose-500/40'
-                    : 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
+                    : analysisResult.decision === 'Needs Review' || analysisResult.status === 'NEEDS_REVIEW'
+                      ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40'
+                      : 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
                 }`}>
-                  {analysisResult.decision}
+                  {analysisResult.decision || analysisResult.status}
                 </span>
               </div>
 
@@ -358,10 +357,10 @@ export const TransactionAnalysisModule = ({ onTriggerThreatShift, onNavigateTab 
                   {(analysisResult.risk_score * 100).toFixed(1)}%
                 </div>
                 <span className="text-[11px] text-slate-400 mt-1 block">
-                  CALCULATED FRAUD PROBABILITY
+                  ACTUAL MODEL FRAUD PROBABILITY
                 </span>
-                <span className="text-[10px] text-indigo-500 mt-0.5 block">
-                  Domain Optimal Threshold: {(analysisResult.optimal_threshold * 100).toFixed(1)}%
+                <span className="text-[10px] text-indigo-500 mt-0.5 font-bold block">
+                  Classification Rule: Safe (&lt;35%) • Needs Review (35%-65%) • Fraud (&gt;65%)
                 </span>
               </div>
 
