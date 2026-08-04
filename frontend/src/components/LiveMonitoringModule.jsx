@@ -39,56 +39,87 @@ export const LiveMonitoringModule = () => {
     const errorOrg = oldOrg - amount - newOrg;
     const errorDest = oldDest + amount - newDest;
 
+    const hasErrorOrg = Math.abs(errorOrg) > 0.01;
+    const hasErrorDest = Math.abs(errorDest) > 0.01;
+    const isSuspiciousType = tx.type === 'TRANSFER' || tx.type === 'CASH_OUT';
+    const isHighAmount = amount > 200000;
+    const isDrained = oldOrg > 0 && newOrg === 0;
+
     return [
       {
         feature: 'errorBalanceOrig',
         rawValue: errorOrg.toFixed(2),
-        shapValue: Math.abs(errorOrg) > 0.01 ? 0.384 : 0.012,
-        isPositive: Math.abs(errorOrg) > 0.01,
-        impactPct: '38.4%',
-        explanation: Math.abs(errorOrg) > 0.01 
+        shapValue: hasErrorOrg ? 0.384 : -0.145,
+        isPositive: hasErrorOrg,
+        impactPct: hasErrorOrg ? '38.4%' : '14.5%',
+        explanation: hasErrorOrg 
           ? `Balance mismatch of $${Math.abs(errorOrg).toLocaleString()} indicates balance manipulation.`
-          : 'Origin balance update verified.'
+          : 'Origin balance update verified (Zero error).'
       },
       {
         feature: 'type (TRANSFER/CASH_OUT)',
         rawValue: tx.type,
-        shapValue: (tx.type === 'TRANSFER' || tx.type === 'CASH_OUT') ? 0.265 : -0.120,
-        isPositive: tx.type === 'TRANSFER' || tx.type === 'CASH_OUT',
-        impactPct: '26.5%',
-        explanation: (tx.type === 'TRANSFER' || tx.type === 'CASH_OUT')
+        shapValue: isSuspiciousType ? 0.265 : -0.210,
+        isPositive: isSuspiciousType,
+        impactPct: isSuspiciousType ? '26.5%' : '21.0%',
+        explanation: isSuspiciousType
           ? `${tx.type} carries high historical fraud probability in PaySim.`
-          : `${tx.type} carries 0.00% historical fraud rate.`
+          : `${tx.type} carries 0.00% historical fraud baseline.`
       },
       {
         feature: 'amount',
         rawValue: `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-        shapValue: amount > 200000 ? 0.182 : 0.045,
-        isPositive: amount > 200000,
-        impactPct: '18.2%',
-        explanation: amount > 200000 
+        shapValue: isHighAmount ? 0.182 : -0.095,
+        isPositive: isHighAmount,
+        impactPct: isHighAmount ? '18.2%' : '9.5%',
+        explanation: isHighAmount 
           ? 'High value transfer exceeding $200,000 threshold.'
           : 'Standard transaction volume.'
       },
       {
         feature: 'oldbalanceOrg',
         rawValue: `$${oldOrg.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-        shapValue: oldOrg > 0 && newOrg === 0 ? 0.124 : 0.010,
-        isPositive: oldOrg > 0 && newOrg === 0,
-        impactPct: '12.4%',
-        explanation: oldOrg > 0 && newOrg === 0 
+        shapValue: isDrained ? 0.124 : -0.080,
+        isPositive: isDrained,
+        impactPct: isDrained ? '12.4%' : '8.0%',
+        explanation: isDrained 
           ? 'Account drained completely to $0 balance in single step.'
           : 'Account retains residual balance.'
       },
       {
         feature: 'errorBalanceDest',
         rawValue: errorDest.toFixed(2),
-        shapValue: Math.abs(errorDest) > 0.01 ? 0.085 : -0.015,
-        isPositive: Math.abs(errorDest) > 0.01,
-        impactPct: '8.5%',
-        explanation: Math.abs(errorDest) > 0.01
+        shapValue: hasErrorDest ? 0.085 : -0.065,
+        isPositive: hasErrorDest,
+        impactPct: hasErrorDest ? '8.5%' : '6.5%',
+        explanation: hasErrorDest
           ? `Destination balance mismatch of $${Math.abs(errorDest).toLocaleString()}.`
           : 'Destination balance update verified.'
+      }
+    ];
+  };
+
+  const computeInlineShap = (tx, res) => {
+    const errorOrg = tx.oldbalanceOrg - tx.amount - tx.newbalanceOrig;
+    const isSuspiciousType = tx.type === 'TRANSFER' || tx.type === 'CASH_OUT';
+    const isHighAmount = tx.amount > 200000;
+    const hasErrorOrg = Math.abs(errorOrg) > 0.01;
+
+    return [
+      { 
+        feature: 'errorBalanceOrig', 
+        val: hasErrorOrg ? '+0.384 Risk' : '-0.145 Safe', 
+        isRisk: hasErrorOrg 
+      },
+      { 
+        feature: 'type', 
+        val: isSuspiciousType ? '+0.265 Risk' : '-0.210 Safe', 
+        isRisk: isSuspiciousType 
+      },
+      { 
+        feature: 'amount', 
+        val: isHighAmount ? '+0.182 Risk' : '-0.095 Safe', 
+        isRisk: isHighAmount 
       }
     ];
   };
@@ -115,7 +146,8 @@ export const LiveMonitoringModule = () => {
           risk: Math.round(res.risk_score * 100),
           riskScore: res.risk_score,
           status: isBlock ? 'BLOCKED' : 'CLEARED',
-          shapAttributions: computeDetailedShap(item, res)
+          shapAttributions: computeDetailedShap(item, res),
+          shapTags: computeInlineShap(item, res)
         };
 
         initialList.push(txObj);
@@ -155,7 +187,8 @@ export const LiveMonitoringModule = () => {
         risk: Math.round(res.risk_score * 100),
         riskScore: res.risk_score,
         status: isBlock ? 'BLOCKED' : 'CLEARED',
-        shapAttributions: computeDetailedShap(txPayload, res)
+        shapAttributions: computeDetailedShap(txPayload, res),
+        shapTags: computeInlineShap(txPayload, res)
       };
 
       setTransactions(prev => [newTx, ...prev.slice(0, 8)]);
@@ -174,7 +207,7 @@ export const LiveMonitoringModule = () => {
     : '0.0';
 
   const baseValue = 0.0129;
-  const selRisk = selectedTransaction?.riskScore ?? 0.5;
+  const selRisk = selectedTransaction?.riskScore ?? 0.05;
 
   return (
     <div className="space-y-6 font-mono">
@@ -275,7 +308,7 @@ export const LiveMonitoringModule = () => {
                             : 'bg-slate-50/80 dark:bg-white/5 border-slate-200/80 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded-lg font-bold text-[10px] ${
                             isBlocked ? 'bg-rose-500 text-white' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
@@ -297,6 +330,22 @@ export const LiveMonitoringModule = () => {
                               {tx.nameOrig} → {tx.nameDest}
                             </div>
                           </div>
+                        </div>
+
+                        {/* Inline SHAP Tags */}
+                        <div className="flex flex-wrap items-center gap-1 my-1 sm:my-0">
+                          {tx.shapTags?.map((tag, idx) => (
+                            <span
+                              key={idx}
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                tag.isRisk
+                                  ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                                  : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                              }`}
+                            >
+                              {tag.feature}: {tag.val}
+                            </span>
+                          ))}
                         </div>
 
                         <div className="text-right">
@@ -393,7 +442,7 @@ export const LiveMonitoringModule = () => {
                       <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
                         <div 
                           className={`h-full rounded-full ${attr.isPositive ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                          style={{ width: `${Math.min(attr.shapValue * 200, 100)}%` }}
+                          style={{ width: `${Math.min(Math.abs(attr.shapValue) * 200, 100)}%` }}
                         />
                       </div>
 

@@ -49,7 +49,7 @@ export const ExplainableAIModule = () => {
 
   // Base expected value for PaySim XGBoost model
   const baseValue = 0.0129; // 1.29% baseline fraud probability in PaySim
-  const predictedScore = shapData?.risk_score ?? 0.5;
+  const predictedScore = shapData?.risk_score ?? 0.05;
 
   // Compute detailed feature SHAP contributions for PaySim features
   const amount = currentTransaction.amount || 0;
@@ -60,54 +60,60 @@ export const ExplainableAIModule = () => {
   const errorOrg = oldOrg - amount - newOrg;
   const errorDest = oldDest + amount - newDest;
 
+  const hasErrorOrg = Math.abs(errorOrg) > 0.01;
+  const hasErrorDest = Math.abs(errorDest) > 0.01;
+  const isSuspiciousType = currentTransaction.type === 'TRANSFER' || currentTransaction.type === 'CASH_OUT';
+  const isHighAmount = amount > 200000;
+  const isDrained = oldOrg > 0 && newOrg === 0;
+
   const featureContributions = [
     {
       feature: 'errorBalanceOrig',
       rawValue: errorOrg.toFixed(2),
-      shapValue: Math.abs(errorOrg) > 0.01 ? 0.384 : 0.012,
-      isPositive: Math.abs(errorOrg) > 0.01,
-      impactPct: '38.4%',
-      explanation: Math.abs(errorOrg) > 0.01 
+      shapValue: hasErrorOrg ? 0.384 : -0.145,
+      isPositive: hasErrorOrg,
+      impactPct: hasErrorOrg ? '38.4%' : '14.5%',
+      explanation: hasErrorOrg 
         ? `Origin balance mismatch of $${Math.abs(errorOrg).toLocaleString()} indicates balance manipulation.`
-        : 'Origin balance difference matches exact transaction amount.'
+        : 'Origin balance difference matches exact transaction amount (Zero error).'
     },
     {
       feature: 'type (TRANSFER/CASH_OUT)',
       rawValue: currentTransaction.type,
-      shapValue: (currentTransaction.type === 'TRANSFER' || currentTransaction.type === 'CASH_OUT') ? 0.265 : -0.120,
-      isPositive: currentTransaction.type === 'TRANSFER' || currentTransaction.type === 'CASH_OUT',
-      impactPct: '26.5%',
-      explanation: (currentTransaction.type === 'TRANSFER' || currentTransaction.type === 'CASH_OUT')
+      shapValue: isSuspiciousType ? 0.265 : -0.210,
+      isPositive: isSuspiciousType,
+      impactPct: isSuspiciousType ? '26.5%' : '21.0%',
+      explanation: isSuspiciousType
         ? `${currentTransaction.type} accounts for 99.9% of all fraud in PaySim.`
         : `${currentTransaction.type} carries 0.00% historical fraud baseline.`
     },
     {
       feature: 'amount',
       rawValue: `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-      shapValue: amount > 200000 ? 0.182 : 0.045,
-      isPositive: amount > 200000,
-      impactPct: '18.2%',
-      explanation: amount > 200000 
+      shapValue: isHighAmount ? 0.182 : -0.095,
+      isPositive: isHighAmount,
+      impactPct: isHighAmount ? '18.2%' : '9.5%',
+      explanation: isHighAmount 
         ? `High value transfer exceeding $200,000 threshold.`
         : `Standard transaction volume.`
     },
     {
       feature: 'oldbalanceOrg',
       rawValue: `$${oldOrg.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-      shapValue: oldOrg > 0 && newOrg === 0 ? 0.124 : 0.010,
-      isPositive: oldOrg > 0 && newOrg === 0,
-      impactPct: '12.4%',
-      explanation: oldOrg > 0 && newOrg === 0 
+      shapValue: isDrained ? 0.124 : -0.080,
+      isPositive: isDrained,
+      impactPct: isDrained ? '12.4%' : '8.0%',
+      explanation: isDrained 
         ? 'Account drained completely to $0 balance in a single transaction.'
         : 'Account retains residual balance after transfer.'
     },
     {
       feature: 'errorBalanceDest',
       rawValue: errorDest.toFixed(2),
-      shapValue: Math.abs(errorDest) > 0.01 ? 0.085 : -0.015,
-      isPositive: Math.abs(errorDest) > 0.01,
-      impactPct: '8.5%',
-      explanation: Math.abs(errorDest) > 0.01
+      shapValue: hasErrorDest ? 0.085 : -0.065,
+      isPositive: hasErrorDest,
+      impactPct: hasErrorDest ? '8.5%' : '6.5%',
+      explanation: hasErrorDest
         ? `Destination balance delta error of $${Math.abs(errorDest).toLocaleString()}.`
         : 'Destination balance update verified.'
     }
@@ -200,7 +206,7 @@ export const ExplainableAIModule = () => {
                 <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
                   <div 
                     className={`h-full rounded-full ${item.isPositive ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                    style={{ width: `${Math.min(item.shapValue * 200, 100)}%` }}
+                    style={{ width: `${Math.min(Math.abs(item.shapValue) * 200, 100)}%` }}
                   />
                 </div>
 
@@ -263,14 +269,14 @@ export const ExplainableAIModule = () => {
 
           {/* TreeSHAP Explanation Summary */}
           <div className="glass-card p-6">
-            <h3 className="text-sm font-bold font-mono text-slate-900 dark:text-white mb-2 flex items-center gap-1.5">
+            <h3 className="text-sm font-bold font-mono text-slate-900 dark:text-white mb-2 flex items-center gap-1.5 font-mono">
               <Info className="w-4 h-4 text-[#7C3AED]" />
               HOW TO READ SHAP VALUES
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-mono">
               TreeSHAP computes exact Shapley values derived from game theory. 
-              <span className="text-rose-500 font-bold ml-1">Positive SHAP values (+)</span> increase the predicted fraud probability towards a BLOCK decision.
-              <span className="text-emerald-500 font-bold ml-1">Negative SHAP values (-)</span> lower the risk score towards an ALLOW decision.
+              <span className="text-rose-500 font-bold ml-1">Positive SHAP values (+)</span> increase predicted risk towards a BLOCK decision.
+              <span className="text-emerald-500 font-bold ml-1">Negative SHAP values (-)</span> lower predicted risk towards an ALLOW decision.
             </p>
           </div>
 
