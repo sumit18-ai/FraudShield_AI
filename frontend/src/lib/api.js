@@ -12,7 +12,7 @@ export const DATASET_METADATA = {
     optimizedF1: '99.66%',
     precision: '100.0%',
     recall: '99.33%',
-    threshold: '0.6500',
+    threshold: '0.7500',
     riskDrivers: ['errorBalanceOrig', 'errorBalanceDest', 'type (TRANSFER/CASH_OUT)', 'is_high_amount_transfer'],
     description: 'Simulated P2P mobile money transaction dataset derived from real African mobile money logs.'
   },
@@ -27,7 +27,7 @@ export const DATASET_METADATA = {
     optimizedF1: '89.25%',
     precision: '94.32%',
     recall: '84.69%',
-    threshold: '0.6500',
+    threshold: '0.7500',
     riskDrivers: ['V14 (PCA Anomaly)', 'V17 (PCA Anomaly)', 'V12 (PCA Vector)', 'Amount ($)'],
     description: 'Anonymized European cardholder transactions featuring 28 mathematical PCA transformation vectors.'
   },
@@ -42,7 +42,7 @@ export const DATASET_METADATA = {
     optimizedF1: '85.57%',
     precision: '90.53%',
     recall: '81.12%',
-    threshold: '0.6500',
+    threshold: '0.7500',
     riskDrivers: ['distance_km (Haversine)', 'amt ($)', 'hour_of_day', 'category'],
     description: 'Geographical credit card dataset analyzing Haversine distance between cardholder and merchant.'
   },
@@ -57,7 +57,7 @@ export const DATASET_METADATA = {
     optimizedF1: '97.14%',
     precision: '94.44%',
     recall: '100.0%',
-    threshold: '0.6500',
+    threshold: '0.7500',
     riskDrivers: ['es_tech (Tech Merchant)', 'es_hotelservices (Hotel Merchant)', 'es_sportsandtoys', 'amount ($)'],
     description: 'Agent-based retail banking simulator tracking customer merchant categories and spending patterns.'
   }
@@ -97,6 +97,41 @@ export async function fetchRandomTransaction() {
   return PAYSIM_SAMPLES[randomIndex];
 }
 
+function calculateCalibratedRisk(p, transactionDict) {
+  const amount = parseFloat(transactionDict.amount || transactionDict.amt || 0.0);
+  const oldBal = parseFloat(transactionDict.oldbalanceOrg || 0.0);
+  const newBal = parseFloat(transactionDict.newbalanceOrig || 0.0);
+  const txType = String(transactionDict.type || "").toUpperCase();
+  const errorOrig = oldBal - amount - newBal;
+  
+  const amountLog = Math.log10(amount + 1);
+  const amountFactor = Math.min(1.0, amountLog / 6.0); // maxes out at 1,000,000
+  
+  const decision = p > 0.5 ? "Block" : "Allow";
+  
+  if (decision === "Block") {
+    const base = 0.75;
+    const confFactor = 0.08 * ((p - 0.5) / 0.5);
+    const amtContribution = 0.08 * amountFactor;
+    const balContribution = (oldBal > 0 && newBal === 0) ? 0.08 : 0.0;
+    const score = base + confFactor + amtContribution + balContribution;
+    return Math.max(0.75, Math.min(0.99, score));
+  } else {
+    if (!["TRANSFER", "CASH_OUT"].includes(txType)) {
+      const score = 0.15 * amountFactor;
+      return Math.max(0.01, Math.min(0.44, score));
+    } else {
+      const base = 0.15;
+      const amtContribution = 0.25 * amountFactor;
+      const balContribution = (oldBal > 0 && newBal === 0) ? 0.20 : 0.0;
+      const discContribution = Math.abs(errorOrig) > 0.01 ? 0.10 : 0.0;
+      const modelContribution = 0.05 * (p / 0.5);
+      const score = base + amtContribution + balContribution + discContribution + modelContribution;
+      return Math.max(0.15, Math.min(0.74, score));
+    }
+  }
+}
+
 export async function analyzeTransaction(transaction, domain = 'paysim') {
   try {
     const res = await fetch(`${API_BASE_URL}/analyze?domain=${domain}`, {
@@ -111,7 +146,7 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
     console.warn(`Backend API un-reachable for ${domain} analysis, executing local fallback evaluation.`);
   }
 
-  // Local fallback prediction
+  // Fallback prediction using calibrated risk score calculation
   const amount = parseFloat(transaction.amount || transaction.amt) || 0;
   const oldbalanceOrg = parseFloat(transaction.oldbalanceOrg) || 0;
   const newbalanceOrig = parseFloat(transaction.newbalanceOrig) || 0;
@@ -122,34 +157,24 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
   const isSuspiciousType = type === 'TRANSFER' || type === 'CASH_OUT';
   const isDrained = oldbalanceOrg > 0 && newbalanceOrig === 0;
 
-  let riskScore = 0.05;
-
-  if (isSuspiciousType) {
-    riskScore += 0.25;
-    if (isDrained) riskScore += 0.40;
-    if (Math.abs(errorBalanceOrig) > 0.01) riskScore += 0.15;
-    if (isHighAmount) riskScore += 0.10;
-  } else {
-    riskScore += Math.min(amount / 500000.0, 0.15);
-  }
-
-  riskScore = Math.min(Math.max(riskScore, 0.01), 0.99);
+  const rawP = (isSuspiciousType && (isDrained || Math.abs(errorBalanceOrig) > 0.01)) ? 0.99 : 0.05;
+  const riskScore = Math.round(calculateCalibratedRisk(rawP, transaction) * 10000) / 10000;
 
   let decision = 'Safe';
   let status = 'SAFE';
 
-  if (riskScore > 0.65) {
+  if (riskScore >= 0.75) {
     decision = 'Fraud';
     status = 'FRAUD';
-  } else if (riskScore >= 0.35) {
+  } else if (riskScore >= 0.45) {
     decision = 'Needs Review';
     status = 'NEEDS_REVIEW';
   }
 
   return {
     domain,
-    raw_prob: Math.round(riskScore * 10000) / 10000,
-    risk_score: Math.round(riskScore * 10000) / 10000,
+    raw_prob: rawP,
+    risk_score: riskScore,
     decision,
     status,
     is_fraud: decision === 'Fraud',
