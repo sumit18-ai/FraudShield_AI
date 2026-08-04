@@ -87,5 +87,8 @@ def evaluate_creditcard_backend(data_path):
 
 if __name__ == "__main__":
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    DATA_PATH = os.path.join(project_root, 'data', 'raw', 'creditcard_sample.csv')
+    real_kaggle_path = os.path.join(project_root, 'data', 'raw', 'creditcard.csv')
+    sample_path = os.path.join(project_root, 'data', 'raw', 'creditcard_sample.csv')
+    
+    DATA_PATH = real_kaggle_path if os.path.exists(real_kaggle_path) else sample_path
     evaluate_creditcard_backend(DATA_PATH)
