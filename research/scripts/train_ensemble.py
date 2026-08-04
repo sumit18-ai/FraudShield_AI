@@ -17,8 +17,9 @@ from omni_smote import OmniSMOTE
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class FraudShieldPipeline:
-    def __init__(self, data_path):
+    def __init__(self, data_path, use_full_dataset=True):
         self.data_path = data_path
+        self.use_full_dataset = use_full_dataset
         self.scaler = RobustScaler()
         self.label_encoder = LabelEncoder()
         self.stacking_model = None
@@ -26,15 +27,18 @@ class FraudShieldPipeline:
 
     def load_and_engineer_features(self):
         """Loads data and creates PaySim-specific features."""
-        logging.info("Loading dataset and performing feature engineering...")
+        logging.info(f"Loading dataset from {self.data_path} (full_dataset={self.use_full_dataset})...")
         df = pd.read_csv(self.data_path)
 
-        # Downsample majority class to speed up training while preserving all fraud rows
-        df_fraud = df[df['isFraud'] == 1]
-        df_normal = df[df['isFraud'] == 0]
-        if len(df_normal) > 200000:
-            df_normal = df_normal.sample(n=200000, random_state=42)
-        df = pd.concat([df_fraud, df_normal]).sample(frac=1.0, random_state=42).reset_index(drop=True)
+        if not self.use_full_dataset:
+            logging.info("Sampling 200k normal cases + 100% fraud cases for fast iteration...")
+            df_fraud = df[df['isFraud'] == 1]
+            df_normal = df[df['isFraud'] == 0]
+            if len(df_normal) > 200000:
+                df_normal = df_normal.sample(n=200000, random_state=42)
+            df = pd.concat([df_fraud, df_normal]).sample(frac=1.0, random_state=42).reset_index(drop=True)
+        else:
+            logging.info(f"Processing FULL dataset ({len(df):,} total records)...")
 
         # 1. Feature Engineering: Balance Errors
         df['errorBalanceOrig'] = df['oldbalanceOrg'] - df['amount'] - df['newbalanceOrig']
@@ -106,10 +110,11 @@ class FraudShieldPipeline:
         
         model = self.build_stacking_ensemble()
         
-        logging.info("Training final Stacking Ensemble with Omni-SMOTE...")
+        logging.info("Training final Stacking Ensemble on FULL dataset with Omni-SMOTE...")
         model.fit(X_train_res, y_train_res)
 
         # Optimize Decision Threshold on test probabilities
+        logging.info("Optimizing Decision Threshold on test set...")
         y_probs = model.predict_proba(X_test_scaled)[:, 1]
         precisions, recalls, thresholds = precision_recall_curve(y_test, y_probs)
         f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-10)
@@ -119,7 +124,7 @@ class FraudShieldPipeline:
         y_preds = (y_probs >= self.optimal_threshold).astype(int)
         precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_preds, average='binary')
 
-        logging.info(f"Model Training & Threshold Tuning Complete!")
+        logging.info(f"Full Dataset Training & Threshold Tuning Complete!")
         logging.info(f"Optimal Decision Threshold: {self.optimal_threshold:.4f}")
         logging.info(f"Test Set Performance: Precision={precision:.4f}, Recall={recall:.4f}, F1-Score={f1:.4f}")
         
@@ -141,7 +146,8 @@ class FraudShieldPipeline:
                          'oldbalanceDest', 'newbalanceDest', 'errorBalanceOrig', 
                          'errorBalanceDest', 'is_high_amount_transfer'],
             'sampling_strategy': 'OmniSMOTE (Omni-Adaptive Hybrid Oversampling)',
-            'optimal_threshold': round(self.optimal_threshold, 4)
+            'optimal_threshold': round(self.optimal_threshold, 4),
+            'trained_on_full_dataset': self.use_full_dataset
         }
         with open(os.path.join(models_dir, 'feature_metadata.json'), 'w') as f:
             json.dump(feature_metadata, f, indent=4)
@@ -152,5 +158,6 @@ if __name__ == "__main__":
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     DATA_PATH = os.path.join(project_root, 'data', 'raw', 'paysim.csv') 
     
-    pipeline = FraudShieldPipeline(DATA_PATH)
+    # Train on full 6.36 million row dataset
+    pipeline = FraudShieldPipeline(DATA_PATH, use_full_dataset=True)
     pipeline.run_pipeline()
