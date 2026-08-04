@@ -132,7 +132,9 @@ export const LiveMonitoringModule = () => {
       for (let i = 0; i < 6; i++) {
         const item = PAYSIM_LIVE_POOL[i % PAYSIM_LIVE_POOL.length];
         const res = await analyzeTransaction(item);
-        const isBlock = res.decision === 'Block' || res.is_fraud;
+        
+        // Strict > 45% risk threshold logic
+        const isBlock = res.risk_score >= 0.45 || res.decision === 'Block' || res.is_fraud;
         const id = `tx-ps-${Math.floor(1000 + Math.random() * 9000)}`;
 
         if (isBlock) fraudCount++;
@@ -146,7 +148,7 @@ export const LiveMonitoringModule = () => {
           ...item,
           risk: riskScorePct,
           riskScore: res.risk_score,
-          status: isBlock ? 'BLOCKED' : 'CLEARED',
+          status: isBlock ? 'BLOCKED (FRAUD)' : 'CLEARED (SAFE)',
           shapAttributions: computeDetailedShap(item, res),
           shapTags: computeInlineShap(item, res)
         };
@@ -178,7 +180,9 @@ export const LiveMonitoringModule = () => {
       const txPayload = { ...raw, amount: Math.max(tweakAmount, 10) };
 
       const res = await analyzeTransaction(txPayload);
-      const isBlock = res.decision === 'Block' || res.is_fraud;
+      
+      // Strict > 45% risk threshold logic
+      const isBlock = res.risk_score >= 0.45 || res.decision === 'Block' || res.is_fraud;
       const id = `tx-ps-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const riskScorePct = (res.risk_score * 100).toFixed(1);
@@ -189,7 +193,7 @@ export const LiveMonitoringModule = () => {
         ...txPayload,
         risk: riskScorePct,
         riskScore: res.risk_score,
-        status: isBlock ? 'BLOCKED' : 'CLEARED',
+        status: isBlock ? 'BLOCKED (FRAUD)' : 'CLEARED (SAFE)',
         shapAttributions: computeDetailedShap(txPayload, res),
         shapTags: computeInlineShap(txPayload, res)
       };
@@ -224,22 +228,22 @@ export const LiveMonitoringModule = () => {
             <span>{metrics.totalProcessed}</span>
             <Activity className="w-4 h-4 text-[#7C3AED] animate-pulse" />
           </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">Live PaySim Ingestion Counter</span>
+          <span className="text-[10px] text-slate-400 mt-1 block">Live Ingestion Counter</span>
         </div>
 
-        {/* Counter 2: Total Fraud Cases Detected */}
+        {/* Counter 2: Total Fraud Cases Intercepted (Threshold > 45%) */}
         <div className="glass-card p-5 border-l-4 border-l-rose-500">
-          <span className="text-xs text-slate-400 block mb-1">Total Fraud Cases Blocked</span>
+          <span className="text-xs text-slate-400 block mb-1">Total Fraud Blocked (&gt; 45% Risk)</span>
           <div className="text-3xl font-black text-rose-500 flex items-center gap-2">
             <span>{metrics.totalFraud}</span>
             <ShieldAlert className="w-4 h-4 text-rose-500" />
           </div>
-          <span className="text-[10px] text-rose-500/80 mt-1 block">High Risk ML Interceptions</span>
+          <span className="text-[10px] text-rose-500/80 mt-1 block">Fraud Interceptions (&ge; 45.0%)</span>
         </div>
 
         {/* Counter 3: Live Fraud Rate % */}
         <div className="glass-card p-5 border-l-4 border-l-amber-500">
-          <span className="text-xs text-slate-400 block mb-1">Live Ingestion Fraud Rate</span>
+          <span className="text-xs text-slate-400 block mb-1">Live Fraud Rate %</span>
           <div className="text-3xl font-black text-amber-500">
             {liveFraudRate}%
           </div>
@@ -267,10 +271,10 @@ export const LiveMonitoringModule = () => {
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
                   <Radio className="w-4 h-4 text-[#7C3AED] animate-pulse" />
-                  Live PaySim Stream (Continuous Risk Scores)
+                  Live Stream (ML Probability &gt; 45% = Fraud)
                 </h3>
                 <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
-                  SELECT ANY STREAM TRANSACTION TO LOAD DETAILED SHAP WATERFALL
+                  EXACT ML PROBABILITY CALCULATION (ZERO RANDOM NOISE)
                 </p>
               </div>
 
@@ -291,7 +295,7 @@ export const LiveMonitoringModule = () => {
             <div className="space-y-2 text-xs">
               <AnimatePresence initial={false}>
                 {transactions.map((tx) => {
-                  const isBlocked = tx.status === 'BLOCKED';
+                  const isBlocked = tx.riskScore >= 0.45;
                   const isSelected = selectedTransaction?.id === tx.id;
 
                   return (
@@ -367,8 +371,8 @@ export const LiveMonitoringModule = () => {
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
-            <span>PaySim Live Ingestion Feed</span>
-            <span>Click any transaction row to inspect full TreeSHAP waterfall</span>
+            <span>Strict Decision Rule: &ge; 45.0% Risk = FRAUD / BLOCK</span>
+            <span>Click any transaction row for TreeSHAP analysis</span>
           </div>
         </div>
 
@@ -383,7 +387,7 @@ export const LiveMonitoringModule = () => {
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-[#7C3AED]" />
-                    SHAP Explainability Inspector
+                    ML Model Explainability Inspector
                   </h3>
                   <span className="text-[11px] text-slate-400">
                     Selected Transaction: <strong className="text-slate-800 dark:text-slate-200">{selectedTransaction.id}</strong>
@@ -391,11 +395,11 @@ export const LiveMonitoringModule = () => {
                 </div>
 
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  selectedTransaction.status === 'BLOCKED'
+                  selRisk >= 0.45
                     ? 'bg-rose-500/20 text-rose-500 border border-rose-500/40'
                     : 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
                 }`}>
-                  {selectedTransaction.status}
+                  {selRisk >= 0.45 ? 'FRAUD (BLOCKED)' : 'SAFE (CLEARED)'}
                 </span>
               </div>
 
@@ -405,20 +409,28 @@ export const LiveMonitoringModule = () => {
                   {(selRisk * 100).toFixed(1)}%
                 </div>
                 <span className="text-[11px] text-slate-400 mt-1 block">
-                  CONTINUOUS FRAUD PROBABILITY
+                  CALCULATED ML FRAUD PROBABILITY
+                </span>
+                <span className="text-[10px] text-rose-500 mt-0.5 font-bold block">
+                  Fraud Threshold: 45.0% ({selRisk >= 0.45 ? 'EXCEEDED → FRAUD' : 'WITHIN SAFE LIMIT'})
                 </span>
               </div>
 
               {/* Baseline vs Prediction Range */}
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-400 text-[11px]">
-                  <span>Base Risk E[f(X)]: 1.29%</span>
-                  <span>Model Output f(x): {(selRisk * 100).toFixed(1)}%</span>
+                  <span>Fraud Threshold: 45.0%</span>
+                  <span>Calculated Risk: {(selRisk * 100).toFixed(1)}%</span>
                 </div>
-                <div className="w-full h-2.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                <div className="w-full h-2.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden relative">
                   <div 
-                    className={`h-full rounded-full ${selRisk >= 0.5 ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                    style={{ width: `${Math.max(selRisk * 100, 4)}%` }}
+                    className="absolute top-0 bottom-0 w-0.5 bg-slate-400 z-10" 
+                    style={{ left: '45%' }}
+                    title="45% Decision Threshold"
+                  />
+                  <div 
+                    className={`h-full rounded-full ${selRisk >= 0.45 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                    style={{ width: `${Math.max(selRisk * 100, 2)}%` }}
                   />
                 </div>
               </div>

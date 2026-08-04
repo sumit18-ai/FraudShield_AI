@@ -12,7 +12,7 @@ export const DATASET_METADATA = {
     optimizedF1: '99.66%',
     precision: '100.0%',
     recall: '99.33%',
-    threshold: '0.8896',
+    threshold: '0.4500',
     riskDrivers: ['errorBalanceOrig', 'errorBalanceDest', 'type (TRANSFER/CASH_OUT)', 'is_high_amount_transfer'],
     description: 'Simulated P2P mobile money transaction dataset derived from real African mobile money logs.'
   },
@@ -27,7 +27,7 @@ export const DATASET_METADATA = {
     optimizedF1: '89.25%',
     precision: '94.32%',
     recall: '84.69%',
-    threshold: '0.9684',
+    threshold: '0.4500',
     riskDrivers: ['V14 (PCA Anomaly)', 'V17 (PCA Anomaly)', 'V12 (PCA Vector)', 'Amount ($)'],
     description: 'Anonymized European cardholder transactions featuring 28 mathematical PCA transformation vectors.'
   },
@@ -42,7 +42,7 @@ export const DATASET_METADATA = {
     optimizedF1: '85.57%',
     precision: '90.53%',
     recall: '81.12%',
-    threshold: '0.9778',
+    threshold: '0.4500',
     riskDrivers: ['distance_km (Haversine)', 'amt ($)', 'hour_of_day', 'category'],
     description: 'Geographical credit card dataset analyzing Haversine distance between cardholder and merchant.'
   },
@@ -57,7 +57,7 @@ export const DATASET_METADATA = {
     optimizedF1: '97.14%',
     precision: '94.44%',
     recall: '100.0%',
-    threshold: '0.3293',
+    threshold: '0.4500',
     riskDrivers: ['es_tech (Tech Merchant)', 'es_hotelservices (Hotel Merchant)', 'es_sportsandtoys', 'amount ($)'],
     description: 'Agent-based retail banking simulator tracking customer merchant categories and spending patterns.'
   }
@@ -111,7 +111,7 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
     console.warn(`Backend API un-reachable for ${domain} analysis, executing local fallback evaluation.`);
   }
 
-  // Dynamic continuous fallback risk score calculation
+  // Pure feature-driven mathematical model calculation (ZERO random numbers/noise)
   const amount = parseFloat(transaction.amount || transaction.amt) || 0;
   const oldbalanceOrg = parseFloat(transaction.oldbalanceOrg) || 0;
   const newbalanceOrig = parseFloat(transaction.newbalanceOrig) || 0;
@@ -122,26 +122,36 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
   const isSuspiciousType = type === 'TRANSFER' || type === 'CASH_OUT';
   const isDrained = oldbalanceOrg > 0 && newbalanceOrig === 0;
 
-  const typeWeight = isSuspiciousType ? 0.35 : 0.04;
-  const drainWeight = isDrained ? 0.38 : (isSuspiciousType ? 0.12 : 0.02);
-  const amountWeight = Math.min(amount / 500000.0, 1.0) * 0.15;
-  const errorWeight = Math.abs(errorBalanceOrig) > 0.01 ? 0.25 : 0.0;
+  let riskScore = 0.02; // Base baseline probability
 
-  const blendedRisk = (typeWeight * 0.35) + (drainWeight * 0.30) + (amountWeight * 0.20) + (errorWeight * 0.15);
-  const hashNoise = ((amount * 17.0 + (oldbalanceOrg || 1.0) * 31.0) % 73.0) / 10000.0;
-  const riskScore = Math.min(Math.max(blendedRisk + hashNoise, 0.012), 0.988);
+  if (isSuspiciousType) {
+    riskScore += 0.25; // Historical type risk
+    if (isDrained) {
+      riskScore += 0.40; // Account draining factor
+    }
+    if (Math.abs(errorBalanceOrig) > 0.01) {
+      riskScore += 0.20; // Origin balance error
+    }
+    if (isHighAmount) {
+      riskScore += 0.10; // High amount transfer
+    }
+  } else {
+    // Continuous feature variation for normal types (PAYMENT, DEBIT, CASH_IN) based on amount
+    riskScore += Math.min(amount / 500000.0, 0.15);
+  }
 
-  const meta = DATASET_METADATA[domain] || DATASET_METADATA.paysim;
-  const thresh = parseFloat(meta.threshold) || 0.50;
+  riskScore = Math.min(Math.max(riskScore, 0.01), 0.99);
 
-  const decision = riskScore >= thresh ? 'Block' : 'Allow';
+  // Strict 45% fraud decision threshold: >= 45.0% marked as Fraud / Block
+  const threshold = 0.45;
+  const decision = riskScore >= threshold ? 'Block' : 'Allow';
 
   return {
     domain,
     risk_score: Math.round(riskScore * 10000) / 10000,
     decision,
     is_fraud: decision === 'Block',
-    optimal_threshold: thresh,
+    optimal_threshold: threshold,
     explanations: [
       { feature: 'errorBalanceOrig', shap_value: Math.abs(errorBalanceOrig) > 0 ? 0.384 : -0.145 },
       { feature: 'amount', shap_value: isHighAmount ? 0.182 : -0.095 },
