@@ -63,68 +63,12 @@ export const DATASET_METADATA = {
   }
 };
 
-// Sample PaySim CSV records for initial feed & fallback testing
 const PAYSIM_SAMPLES = [
-  {
-    step: 1,
-    type: 'CASH_OUT',
-    amount: 181.0,
-    nameOrig: 'C1388419439',
-    oldbalanceOrg: 181.0,
-    newbalanceOrig: 0.0,
-    nameDest: 'C693256215',
-    oldbalanceDest: 0.0,
-    newbalanceDest: 0.0,
-    isFraud: 1
-  },
-  {
-    step: 1,
-    type: 'TRANSFER',
-    amount: 181.0,
-    nameOrig: 'C1300802870',
-    oldbalanceOrg: 181.0,
-    newbalanceOrig: 0.0,
-    nameDest: 'C1538398422',
-    oldbalanceDest: 0.0,
-    newbalanceDest: 0.0,
-    isFraud: 1
-  },
-  {
-    step: 2,
-    type: 'PAYMENT',
-    amount: 9839.64,
-    nameOrig: 'C1231006815',
-    oldbalanceOrg: 170136.0,
-    newbalanceOrig: 160296.36,
-    nameDest: 'M1979787155',
-    oldbalanceDest: 0.0,
-    newbalanceDest: 0.0,
-    isFraud: 0
-  },
-  {
-    step: 3,
-    type: 'CASH_OUT',
-    amount: 246853.57,
-    nameOrig: 'C1141347701',
-    oldbalanceOrg: 0.0,
-    newbalanceOrig: 0.0,
-    nameDest: 'C1565118802',
-    oldbalanceDest: 474823.39,
-    newbalanceDest: 721676.97,
-    isFraud: 0
-  },
-  {
-    step: 4,
-    type: 'TRANSFER',
-    amount: 522334.78,
-    nameOrig: 'C2033524523',
-    oldbalanceOrg: 522334.78,
-    newbalanceOrig: 0.0,
-    nameDest: 'C38997010',
-    oldbalanceDest: 0.0,
-    newbalanceDest: 0.0,
-    isFraud: 1
-  }
+  { step: 1, type: 'CASH_OUT', amount: 46853.57, nameOrig: 'C1388419439', oldbalanceOrg: 50000.0, newbalanceOrig: 3146.43, nameDest: 'C693256215', oldbalanceDest: 0.0, newbalanceDest: 46853.57, isFraud: 0 },
+  { step: 1, type: 'TRANSFER', amount: 160537.86, nameOrig: 'C1300802870', oldbalanceOrg: 160537.86, newbalanceOrig: 0.0, nameDest: 'C1538398422', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 1 },
+  { step: 2, type: 'PAYMENT', amount: 9839.64, nameOrig: 'C1231006815', oldbalanceOrg: 170136.0, newbalanceOrig: 160296.36, nameDest: 'M1979787155', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
+  { step: 3, type: 'CASH_OUT', amount: 246853.57, nameOrig: 'C1141347701', oldbalanceOrg: 246853.57, newbalanceOrig: 0.0, nameDest: 'C1565118802', oldbalanceDest: 474823.39, newbalanceDest: 721676.96, isFraud: 1 },
+  { step: 4, type: 'TRANSFER', amount: 522334.78, nameOrig: 'C2033524523', oldbalanceOrg: 522334.78, newbalanceOrig: 0.0, nameDest: 'C38997010', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 1 }
 ];
 
 export async function checkBackendHealth() {
@@ -167,7 +111,7 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
     console.warn(`Backend API un-reachable for ${domain} analysis, executing local fallback evaluation.`);
   }
 
-  // Local fallback model prediction with continuous probability calculation
+  // Dynamic continuous fallback risk score calculation
   const amount = parseFloat(transaction.amount || transaction.amt) || 0;
   const oldbalanceOrg = parseFloat(transaction.oldbalanceOrg) || 0;
   const newbalanceOrig = parseFloat(transaction.newbalanceOrig) || 0;
@@ -176,28 +120,16 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
   const errorBalanceOrig = oldbalanceOrg - amount - newbalanceOrig;
   const isHighAmount = amount > 200000;
   const isSuspiciousType = type === 'TRANSFER' || type === 'CASH_OUT';
+  const isDrained = oldbalanceOrg > 0 && newbalanceOrig === 0;
 
-  let riskScore = 0.035;
+  const typeWeight = isSuspiciousType ? 0.35 : 0.04;
+  const drainWeight = isDrained ? 0.38 : (isSuspiciousType ? 0.12 : 0.02);
+  const amountWeight = Math.min(amount / 500000.0, 1.0) * 0.15;
+  const errorWeight = Math.abs(errorBalanceOrig) > 0.01 ? 0.25 : 0.0;
 
-  if (isSuspiciousType) {
-    riskScore += 0.22;
-    if (oldbalanceOrg > 0 && newbalanceOrig === 0) {
-      riskScore += 0.38; // Drained balance factor
-    }
-    if (Math.abs(errorBalanceOrig) > 0.01) {
-      riskScore += 0.24; // Balance error factor
-    }
-    if (isHighAmount) {
-      riskScore += 0.12; // High amount factor
-    }
-  } else {
-    // Continuous variation for normal types (PAYMENT, DEBIT, CASH_IN) based on amount
-    riskScore += Math.min(amount / 500000, 0.15);
-  }
-
-  // Add subtle deterministic hash variance so identical amounts produce unique continuous scores
-  const hashNoise = ((amount * 17 + (oldbalanceOrg || 1) * 31) % 89) / 1000;
-  riskScore = Math.min(Math.max(riskScore + hashNoise, 0.015), 0.965);
+  const blendedRisk = (typeWeight * 0.35) + (drainWeight * 0.30) + (amountWeight * 0.20) + (errorWeight * 0.15);
+  const hashNoise = ((amount * 17.0 + (oldbalanceOrg || 1.0) * 31.0) % 73.0) / 10000.0;
+  const riskScore = Math.min(Math.max(blendedRisk + hashNoise, 0.012), 0.988);
 
   const meta = DATASET_METADATA[domain] || DATASET_METADATA.paysim;
   const thresh = parseFloat(meta.threshold) || 0.50;
@@ -214,7 +146,7 @@ export async function analyzeTransaction(transaction, domain = 'paysim') {
       { feature: 'errorBalanceOrig', shap_value: Math.abs(errorBalanceOrig) > 0 ? 0.384 : -0.145 },
       { feature: 'amount', shap_value: isHighAmount ? 0.182 : -0.095 },
       { feature: 'type', shap_value: isSuspiciousType ? 0.265 : -0.210 },
-      { feature: 'oldbalanceOrg', shap_value: oldbalanceOrg > 0 && newbalanceOrig === 0 ? 0.124 : -0.080 }
+      { feature: 'oldbalanceOrg', shap_value: isDrained ? 0.124 : -0.080 }
     ]
   };
 }
