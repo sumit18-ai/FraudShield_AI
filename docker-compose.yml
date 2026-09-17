@@ -10,16 +10,20 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      - ENV=development
+      - ENV=production
+      - PORT=8008
+      - ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - JWT_SECRET_KEY=fraudshield-production-jwt-mesh-2025
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8008
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - backend
     environment:
-      - PORT=3000
-      - NEXT_PUBLIC_API_URL=http://localhost:8008
+      - VITE_API_URL=http://localhost:8008

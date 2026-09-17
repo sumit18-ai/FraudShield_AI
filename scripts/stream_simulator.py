@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import requests
 import time
@@ -5,9 +6,11 @@ import random
 import json
 
 # Configuration
-API_URL = "http://localhost:8008/analyze"  # Ensure your FastAPI is running here
+API_URL = os.getenv("API_URL", "http://localhost:8008/analyze")
+API_KEY = os.getenv("API_KEY", "fs_live_banking_partner_key_889")
 DATA_PATH = "data/raw/paysim.csv"
-DELAY_SECONDS = 2  # Time between transactions
+DELAY_SECONDS = float(os.getenv("DELAY_SECONDS", 2))  # Time between transactions
+
 
 def load_simulation_data():
     print("🚀 Loading dataset for simulation...")
@@ -50,8 +53,10 @@ def simulate_stream():
         }
 
         try:
-            # Send to Backend
-            response = requests.post(API_URL, json=payload)
+            # Send to Backend with Programmatic API Key Header
+            headers = {"X-API-KEY": API_KEY}
+            response = requests.post(API_URL, json=payload, headers=headers)
+
             
             if response.status_code == 200:
                 result = response.json()

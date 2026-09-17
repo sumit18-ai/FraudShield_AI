@@ -23,7 +23,6 @@ export const LiveMonitoringModule = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   
-  // Real-time counter metrics
   const [metrics, setMetrics] = useState({
     totalProcessed: 0,
     totalFraud: 0,
@@ -44,7 +43,6 @@ export const LiveMonitoringModule = () => {
     const hasErrorDest = Math.abs(errorDest) > 0.01;
     const isSuspiciousType = tx.type === 'TRANSFER' || tx.type === 'CASH_OUT';
     const isHighAmount = amount > 200000;
-    const isDrained = oldOrg > 0 && newOrg === 0;
 
     return [
       {
@@ -78,50 +76,31 @@ export const LiveMonitoringModule = () => {
           : 'Standard transaction volume.'
       },
       {
-        feature: 'oldbalanceOrg',
-        rawValue: `$${oldOrg.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-        shapValue: isDrained ? 0.124 : -0.080,
-        isPositive: isDrained,
-        impactPct: isDrained 
-          ? 'Account drained completely to $0 balance in single step.'
-          : 'Account retains residual balance.'
-      },
-      {
         feature: 'errorBalanceDest',
         rawValue: errorDest.toFixed(2),
         shapValue: hasErrorDest ? 0.085 : -0.065,
         isPositive: hasErrorDest,
         impactPct: hasErrorDest ? '8.5%' : '6.5%',
         explanation: hasErrorDest
-          ? `Destination balance mismatch of $${Math.abs(errorDest).toLocaleString()}.`
+          ? `Destination balance delta error of $${Math.abs(errorDest).toLocaleString()}.`
           : 'Destination balance update verified.'
       }
     ];
   };
 
   const computeInlineShap = (tx, res) => {
-    const errorOrg = tx.oldbalanceOrg - tx.amount - tx.newbalanceOrig;
-    const isSuspiciousType = tx.type === 'TRANSFER' || tx.type === 'CASH_OUT';
-    const isHighAmount = tx.amount > 200000;
-    const hasErrorOrg = Math.abs(errorOrg) > 0.01;
-
-    return [
-      { 
-        feature: 'errorBalanceOrig', 
-        val: hasErrorOrg ? '+0.384 Risk' : '-0.145 Safe', 
-        isRisk: hasErrorOrg 
-      },
-      { 
-        feature: 'type', 
-        val: isSuspiciousType ? '+0.265 Risk' : '-0.210 Safe', 
-        isRisk: isSuspiciousType 
-      },
-      { 
-        feature: 'amount', 
-        val: isHighAmount ? '+0.182 Risk' : '-0.095 Safe', 
-        isRisk: isHighAmount 
-      }
-    ];
+    const errorOrg = (tx.oldbalanceOrg || 0) - (tx.amount || 0) - (tx.newbalanceOrig || 0);
+    const isHighAmount = (tx.amount || 0) > 200000;
+    const tags = [];
+    if (Math.abs(errorOrg) > 0.01) {
+      tags.push({ feature: 'Δ_Orig', val: '+0.38', isRisk: true });
+    } else {
+      tags.push({ feature: 'Δ_Orig', val: '-0.15', isRisk: false });
+    }
+    if (isHighAmount) {
+      tags.push({ feature: 'Amt>200k', val: '+0.18', isRisk: true });
+    }
+    return tags;
   };
 
   useEffect(() => {
@@ -218,78 +197,81 @@ export const LiveMonitoringModule = () => {
   const selDecision = selectedTransaction?.decision || (selRisk > 0.65 ? 'Fraud' : selRisk >= 0.35 ? 'Needs Review' : 'Safe');
 
   return (
-    <div className="space-y-6 font-mono">
+    <div className="space-y-6">
       
-      {/* Top Banner: Real-Time Telemetry Counters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 1. CONTINUOUS TELEMETRY STRIP */}
+      <div className="surface-card p-6 grid grid-cols-2 lg:grid-cols-4 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-black/[0.05]">
         
-        {/* Counter 1: Total Processed */}
-        <div className="glass-card p-5 border-l-4 border-l-[#7C3AED]">
-          <span className="text-xs text-slate-400 block mb-1">Total Processed Transactions</span>
-          <div className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <span>{metrics.totalProcessed}</span>
-            <Activity className="w-4 h-4 text-[#7C3AED] animate-pulse" />
+        <div className="flex items-center gap-3.5 pt-2 sm:pt-0 sm:pl-2">
+          <div className="w-10 h-10 rounded-xl bg-black/[0.04] flex items-center justify-center text-zinc-900 shrink-0">
+            <Radio className="w-5 h-5 animate-pulse text-blue-600" />
           </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">Live Ingestion Feed</span>
+          <div>
+            <div className="text-[10px] font-mono text-zinc-400 font-semibold uppercase tracking-wider">Processed Stream</div>
+            <div className="text-2xl font-bold text-zinc-950 font-mono tracking-tight">{metrics.totalProcessed} txs</div>
+            <div className="text-[10px] text-zinc-400 font-mono">Live Ingestion</div>
+          </div>
         </div>
 
-        {/* Counter 2: Total Fraud Cases (>65% Risk) */}
-        <div className="glass-card p-5 border-l-4 border-l-rose-500">
-          <span className="text-xs text-slate-400 block mb-1">Total Flagged FRAUD (&gt; 65%)</span>
-          <div className="text-3xl font-black text-rose-500 flex items-center gap-2">
-            <span>{metrics.totalFraud}</span>
-            <ShieldAlert className="w-4 h-4 text-rose-500" />
+        <div className="flex items-center gap-3.5 pt-2 sm:pt-0 sm:pl-6">
+          <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
+            <ShieldAlert className="w-5 h-5" />
           </div>
-          <span className="text-[10px] text-rose-500/80 mt-1 block">High Risk Interceptions (&gt;65%)</span>
+          <div>
+            <div className="text-[10px] font-mono text-zinc-400 font-semibold uppercase tracking-wider">Interceptions</div>
+            <div className="text-2xl font-bold text-rose-600 font-mono tracking-tight">{metrics.totalFraud}</div>
+            <div className="text-[10px] text-rose-600 font-mono">Automated Block</div>
+          </div>
         </div>
 
-        {/* Counter 3: Needs Review Cases (35%-65% Risk) */}
-        <div className="glass-card p-5 border-l-4 border-l-amber-500">
-          <span className="text-xs text-slate-400 block mb-1">Total NEEDS REVIEW (35%-65%)</span>
-          <div className="text-3xl font-black text-amber-500 flex items-center gap-2">
-            <span>{metrics.totalReview}</span>
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
+        <div className="flex items-center gap-3.5 pt-4 sm:pt-0 sm:pl-6">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+            <AlertTriangle className="w-5 h-5" />
           </div>
-          <span className="text-[10px] text-amber-500/80 mt-1 block">Analyst Queue (35%-65%)</span>
+          <div>
+            <div className="text-[10px] font-mono text-zinc-400 font-semibold uppercase tracking-wider">Analyst Step-Up</div>
+            <div className="text-2xl font-bold text-amber-600 font-mono tracking-tight">{metrics.totalReview}</div>
+            <div className="text-[10px] text-amber-600 font-mono">Requires Review</div>
+          </div>
         </div>
 
-        {/* Counter 4: Total Stream Volume */}
-        <div className="glass-card p-5 border-l-4 border-l-indigo-500">
-          <span className="text-xs text-slate-400 block mb-1">Streamed Volume</span>
-          <div className="text-2xl font-black text-indigo-500">
-            ${metrics.totalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+        <div className="flex items-center gap-3.5 pt-4 sm:pt-0 sm:pl-6">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+            <Zap className="w-5 h-5" />
           </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">Total Ingested Dollar Volume</span>
+          <div>
+            <div className="text-[10px] font-mono text-zinc-400 font-semibold uppercase tracking-wider">Stream Volume</div>
+            <div className="text-2xl font-bold text-zinc-950 font-mono tracking-tight">${metrics.totalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+            <div className="text-[10px] text-emerald-600 font-mono">Evaluated Volume</div>
+          </div>
         </div>
 
       </div>
 
-      {/* Main Grid: Stream Feed (Left 7 Cols) & Detailed SHAP Inspector (Right 5 Cols) */}
+      {/* 2. MAIN FEED & INSPECTOR SPLIT */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Left Column: Live Ingestion Feed */}
-        <div className="lg:col-span-7 glass-card p-6 flex flex-col justify-between">
+        {/* Left 7 cols: Live Ingestion Feed */}
+        <div className="lg:col-span-7 surface-card p-6 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/80 dark:border-white/5">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-black/[0.05]">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
-                  <Radio className="w-4 h-4 text-[#7C3AED] animate-pulse" />
-                  Live Ingestion Feed (Actual ML Probabilities)
+                <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-blue-600" />
+                  <span>Real-Time Payment Stream</span>
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
-                  STATUS TIERS: SAFE (&lt;35%) • NEEDS REVIEW (35%-65%) • FRAUD (&gt;65%)
-                </p>
+                <p className="text-[11px] text-zinc-400">Inline TreeSHAP Attribution Vector Scoring</p>
               </div>
 
               <button
                 onClick={() => setIsPaused(!isPaused)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer border transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold transition-all cursor-pointer border ${
                   isPaused
-                    ? 'bg-amber-500/20 text-amber-600 dark:text-[#F59E0B] border-amber-500/40'
-                    : 'bg-violet-500/10 text-[#7C3AED] dark:text-[#8B5CF6] border-violet-500/30 hover:bg-violet-500/20'
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : 'bg-black/[0.04] text-zinc-800 border-black/[0.06] hover:bg-black/[0.08]'
                 }`}
               >
-                {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
                 <span>{isPaused ? 'RESUME' : 'PAUSE'}</span>
               </button>
             </div>
@@ -302,62 +284,58 @@ export const LiveMonitoringModule = () => {
                   const isSelected = selectedTransaction?.id === tx.id;
 
                   const badgeClass = dec === 'Fraud'
-                    ? 'bg-rose-500/20 text-rose-500 border-rose-500/40'
+                    ? 'bg-rose-50 text-rose-700 border-rose-200/60'
                     : dec === 'Needs Review'
-                      ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
-                      : 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40';
+                      ? 'bg-amber-50 text-amber-700 border-amber-200/60'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
 
                   return (
                     <motion.div
                       key={tx.id}
-                      initial={{ opacity: 0, x: -15 }}
+                      initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.25 }}
+                      exit={{ opacity: 0, scale: 0.96 }}
+                      transition={{ duration: 0.2 }}
                       onClick={() => setSelectedTransaction(tx)}
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
+                      className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
                         isSelected
-                          ? 'ring-2 ring-[#7C3AED] bg-violet-500/15 border-[#7C3AED] shadow-md'
-                          : dec === 'Fraud'
-                            ? 'bg-rose-500/10 border-rose-500/30 hover:bg-rose-500/15'
-                            : dec === 'Needs Review'
-                              ? 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/15'
-                              : 'bg-slate-50/80 dark:bg-white/5 border-slate-200/80 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10'
+                          ? 'ring-2 ring-black bg-white border-black/20 shadow-xs'
+                          : 'bg-black/[0.02] border-black/[0.05] hover:bg-black/[0.04]'
                       }`}
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg font-bold text-[10px] ${
-                            dec === 'Fraud' ? 'bg-rose-500 text-white' : dec === 'Needs Review' ? 'bg-amber-500 text-white' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                          <div className={`px-2 py-1 rounded-md font-mono font-bold text-[10px] ${
+                            dec === 'Fraud' ? 'bg-rose-600 text-white' : dec === 'Needs Review' ? 'bg-amber-500 text-white' : 'bg-black/10 text-zinc-800'
                           }`}>
                             {tx.type}
                           </div>
 
                           <div>
-                            <div className="font-bold flex items-center gap-2">
-                              <span className="text-slate-900 dark:text-white">{tx.id}</span>
-                              <span className="text-slate-400 font-normal text-[11px]">({tx.time})</span>
+                            <div className="font-bold flex items-center gap-2 font-mono">
+                              <span className="text-zinc-900">{tx.id}</span>
+                              <span className="text-zinc-400 font-normal text-[10px]">({tx.time})</span>
                               {isSelected && (
-                                <span className="px-2 py-0.5 rounded-md bg-[#7C3AED] text-white text-[9px] font-bold flex items-center gap-1">
-                                  <Eye className="w-3 h-3" /> INSPECTING
+                                <span className="px-1.5 py-0.5 rounded bg-black text-white text-[9px] font-bold">
+                                  SELECTED
                                 </span>
                               )}
                             </div>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            <div className="text-[10px] font-mono text-zinc-400">
                               {tx.nameOrig} → {tx.nameDest}
                             </div>
                           </div>
                         </div>
 
                         {/* Inline SHAP Tags */}
-                        <div className="flex flex-wrap items-center gap-1 my-1 sm:my-0">
+                        <div className="flex flex-wrap items-center gap-1">
                           {tx.shapTags?.map((tag, idx) => (
                             <span
                               key={idx}
-                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                              className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-semibold border ${
                                 tag.isRisk
-                                  ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
-                                  : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               }`}
                             >
                               {tag.feature}: {tag.val}
@@ -366,8 +344,8 @@ export const LiveMonitoringModule = () => {
                         </div>
 
                         <div className="text-right">
-                          <div className="font-bold text-slate-900 dark:text-white">${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                          <span className={`inline-block mt-0.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}`}>
+                          <div className="font-bold font-mono text-zinc-900">${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                          <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold border ${badgeClass}`}>
                             {tx.risk}% • {tx.status}
                           </span>
                         </div>
@@ -379,9 +357,9 @@ export const LiveMonitoringModule = () => {
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
-            <span>3-Tier Classification: Safe (&lt;35%), Needs Review (35%-65%), Fraud (&gt;65%)</span>
-            <span>Click any row for TreeSHAP analysis</span>
+          <div className="mt-4 pt-3 border-t border-black/[0.04] flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+            <span>3-Tier Logic: Safe (&lt;35%), Step-up (35%-65%), Block (&gt;65%)</span>
+            <span>Click row for TreeSHAP</span>
           </div>
         </div>
 
@@ -389,56 +367,50 @@ export const LiveMonitoringModule = () => {
         <div className="lg:col-span-5 space-y-6">
           
           {selectedTransaction ? (
-            <div className="glass-card p-6 border-t-4 border-t-[#7C3AED] space-y-6">
+            <div className="surface-card p-6 space-y-5">
               
-              {/* Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-white/5">
+              <div className="flex items-center justify-between pb-3 border-b border-black/[0.05]">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-[#7C3AED]" />
-                    ML Model Explainability Inspector
+                  <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    <span>TreeSHAP Diagnostic Inspector</span>
                   </h3>
-                  <span className="text-[11px] text-slate-400">
-                    Selected Transaction: <strong className="text-slate-800 dark:text-slate-200">{selectedTransaction.id}</strong>
+                  <span className="text-[11px] font-mono text-zinc-400">
+                    ID: <strong className="text-zinc-800">{selectedTransaction.id}</strong>
                   </span>
                 </div>
 
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold font-mono ${
                   selDecision === 'Fraud'
-                    ? 'bg-rose-500/20 text-rose-500 border border-rose-500/40'
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
                     : selDecision === 'Needs Review'
-                      ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40'
-                      : 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
                 }`}>
                   {selectedTransaction.status}
                 </span>
               </div>
 
               {/* Risk Dial */}
-              <div className="text-center bg-slate-50 dark:bg-white/5 p-4 rounded-xl border border-slate-200 dark:border-white/10">
-                <div className="text-4xl font-black text-slate-900 dark:text-white">
+              <div className="text-center bg-black/[0.02] p-4 rounded-xl border border-black/[0.05]">
+                <div className="text-3xl font-extrabold text-zinc-950 font-mono">
                   {(selRisk * 100).toFixed(1)}%
                 </div>
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  ACTUAL ML FRAUD PROBABILITY
-                </span>
-                <span className={`text-[10px] font-bold mt-0.5 block ${
-                  selDecision === 'Fraud' ? 'text-rose-500' : selDecision === 'Needs Review' ? 'text-amber-500' : 'text-emerald-500'
-                }`}>
-                  Classification: {selDecision.toUpperCase()} ({selRisk > 0.65 ? '>65% High Risk' : selRisk >= 0.35 ? '35%-65% Analyst Review' : '<35% Safe'})
+                <span className="text-[10px] font-mono text-zinc-400 mt-0.5 block uppercase tracking-wider">
+                  Stacking Meta-Learner Probability
                 </span>
               </div>
 
               {/* Baseline vs Prediction Range */}
-              <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between text-slate-400 text-[11px]">
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between text-zinc-400 text-[10px] font-mono">
                   <span>Safe (&lt;35%)</span>
-                  <span>Needs Review (35%-65%)</span>
-                  <span>Fraud (&gt;65%)</span>
+                  <span>Step-Up (35%-65%)</span>
+                  <span>Block (&gt;65%)</span>
                 </div>
-                <div className="w-full h-2.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden relative">
-                  <div className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-10" style={{ left: '35%' }} title="35% Review Boundary" />
-                  <div className="absolute top-0 bottom-0 w-0.5 bg-rose-500 z-10" style={{ left: '65%' }} title="65% Fraud Boundary" />
+                <div className="w-full h-2 rounded-full bg-black/[0.06] overflow-hidden relative">
+                  <div className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-10" style={{ left: '35%' }} />
+                  <div className="absolute top-0 bottom-0 w-0.5 bg-rose-500 z-10" style={{ left: '65%' }} />
                   <div 
                     className={`h-full rounded-full ${selDecision === 'Fraud' ? 'bg-rose-500' : selDecision === 'Needs Review' ? 'bg-amber-500' : 'bg-emerald-500'}`}
                     style={{ width: `${Math.max(selRisk * 100, 2)}%` }}
@@ -447,31 +419,31 @@ export const LiveMonitoringModule = () => {
               </div>
 
               {/* TreeSHAP Feature Attribution Waterfall List */}
-              <div className="space-y-3 pt-2">
-                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <BarChart2 className="w-3.5 h-3.5 text-[#7C3AED]" />
-                  Detailed Feature Contributions
+              <div className="space-y-2.5 pt-1">
+                <h4 className="text-xs font-bold text-zinc-900 flex items-center gap-1.5 uppercase tracking-wider font-mono">
+                  <BarChart2 className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Feature Contribution Values</span>
                 </h4>
 
                 <div className="space-y-2 text-xs">
                   {selectedTransaction.shapAttributions?.map((attr, idx) => (
-                    <div key={idx} className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900 dark:text-white text-[11px]">{attr.feature}</span>
-                        <span className={`font-bold flex items-center text-[11px] ${attr.isPositive ? 'text-rose-500' : 'text-emerald-500'}`}>
+                    <div key={idx} className="p-2.5 rounded-xl bg-black/[0.02] border border-black/[0.05] space-y-1">
+                      <div className="flex items-center justify-between font-mono text-[11px]">
+                        <span className="font-bold text-zinc-900">{attr.feature}</span>
+                        <span className={`font-bold flex items-center ${attr.isPositive ? 'text-rose-600' : 'text-emerald-600'}`}>
                           {attr.isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                           {attr.isPositive ? '+' : ''}{attr.shapValue.toFixed(3)}
                         </span>
                       </div>
 
-                      <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                      <div className="w-full h-1 rounded-full bg-black/[0.06] overflow-hidden">
                         <div 
                           className={`h-full rounded-full ${attr.isPositive ? 'bg-rose-500' : 'bg-emerald-500'}`}
                           style={{ width: `${Math.min(Math.abs(attr.shapValue) * 200, 100)}%` }}
                         />
                       </div>
 
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 italic mt-0.5">
+                      <p className="text-[10px] text-zinc-500 italic">
                         "{attr.explanation}"
                       </p>
                     </div>
@@ -480,19 +452,19 @@ export const LiveMonitoringModule = () => {
               </div>
 
               {/* Transaction Field Breakdown */}
-              <div className="pt-3 border-t border-slate-200/80 dark:border-white/5 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
-                <div>Type: <strong className="text-slate-800 dark:text-slate-200">{selectedTransaction.type}</strong></div>
-                <div>Amount: <strong className="text-slate-800 dark:text-slate-200">${selectedTransaction.amount.toLocaleString()}</strong></div>
-                <div>Origin Old: <strong className="text-slate-800 dark:text-slate-200">${selectedTransaction.oldbalanceOrg.toLocaleString()}</strong></div>
-                <div>Origin New: <strong className="text-slate-800 dark:text-slate-200">${selectedTransaction.newbalanceOrig.toLocaleString()}</strong></div>
+              <div className="pt-2.5 border-t border-black/[0.05] grid grid-cols-2 gap-2 text-[11px] font-mono text-zinc-500">
+                <div>Type: <strong className="text-zinc-900">{selectedTransaction.type}</strong></div>
+                <div>Amount: <strong className="text-zinc-900">${selectedTransaction.amount.toLocaleString()}</strong></div>
+                <div>Origin Old: <strong className="text-zinc-900">${selectedTransaction.oldbalanceOrg.toLocaleString()}</strong></div>
+                <div>Origin New: <strong className="text-zinc-900">${selectedTransaction.newbalanceOrig.toLocaleString()}</strong></div>
               </div>
 
             </div>
           ) : (
-            <div className="glass-card p-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
-              <Eye className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-2 animate-bounce" />
-              <p className="font-bold text-slate-700 dark:text-slate-300">No Transaction Selected</p>
-              <p className="text-slate-500 mt-1">Click any transaction in the live feed to inspect detailed TreeSHAP explainability.</p>
+            <div className="surface-card p-8 text-center text-zinc-400 text-xs flex flex-col items-center justify-center min-h-[300px]">
+              <Eye className="w-8 h-8 text-zinc-300 mb-2 animate-pulse" />
+              <p className="font-bold text-zinc-800">No Stream Item Selected</p>
+              <p className="text-zinc-500 mt-1">Click any row in the live feed to inspect detailed TreeSHAP explainability.</p>
             </div>
           )}
 

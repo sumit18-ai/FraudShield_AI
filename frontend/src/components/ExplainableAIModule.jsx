@@ -47,11 +47,9 @@ export const ExplainableAIModule = () => {
     }
   };
 
-  // Base expected value for PaySim XGBoost model
-  const baseValue = 0.0129; // 1.29% baseline fraud probability in PaySim
+  const baseValue = 0.0129;
   const predictedScore = shapData?.risk_score ?? 0.05;
 
-  // Compute detailed feature SHAP contributions for PaySim features
   const amount = currentTransaction.amount || 0;
   const oldOrg = currentTransaction.oldbalanceOrg || 0;
   const newOrg = currentTransaction.newbalanceOrig || 0;
@@ -123,56 +121,54 @@ export const ExplainableAIModule = () => {
     <div className="space-y-6">
       
       {/* Top Banner & Control */}
-      <div className="glass-card p-6 border-l-4 border-l-[#7C3AED]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Eye className="w-5 h-5 text-[#7C3AED]" />
-              TREE-SHAP EXPLAINABILITY ENGINE (GLASS BOX ML)
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">
-              EXACT FEATURE ATTRIBUTION & WATERFALL CONTRIBUTION FOR PAYSIM ML MODEL PREDICTIONS
-            </p>
-          </div>
-
-          <button
-            onClick={handleFetchRandom}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-medium text-xs shadow-md transition-all cursor-pointer disabled:opacity-50 font-mono"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            EXPLAIN RANDOM PAYSIM ROW
-          </button>
+      <div className="surface-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-base font-bold text-zinc-950 flex items-center gap-2">
+            <Eye className="w-5 h-5 text-blue-600" />
+            <span>Tree-SHAP Explainability Engine (Glass-Box ML)</span>
+          </h2>
+          <p className="text-xs text-zinc-500 font-mono mt-1">
+            Exact additive feature attribution &amp; waterfall path for PaySim stacking predictions.
+          </p>
         </div>
+
+        <button
+          onClick={handleFetchRandom}
+          disabled={isLoading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white font-medium text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50 font-mono"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          <span>EXPLAIN RANDOM ROW</span>
+        </button>
       </div>
 
       {/* SHAP Waterfall & Contribution Diagram */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left 7 cols: Interactive SHAP Waterfall Plot */}
-        <div className="lg:col-span-7 glass-card p-6">
-          <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-200/80 dark:border-white/5 font-mono">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <BarChart2 className="w-4 h-4 text-[#7C3AED]" />
-              SHAP Waterfall Prediction Path
+        <div className="lg:col-span-7 surface-card p-6">
+          <div className="flex items-center justify-between mb-5 pb-3 border-b border-black/[0.05] font-mono">
+            <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+              <BarChart2 className="w-4 h-4 text-blue-600" />
+              <span>SHAP Waterfall Prediction Path</span>
             </h3>
 
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold font-mono ${
               predictedScore >= 0.5 
-                ? 'bg-rose-500/20 text-rose-500 border border-rose-500/40' 
-                : 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
+                ? 'bg-rose-50 text-rose-700 border border-rose-200/60' 
+                : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
             }`}>
-              {predictedScore >= 0.5 ? 'HIGH RISK BLOCK' : 'LOW RISK ALLOW'}
+              {predictedScore >= 0.5 ? 'HIGH RISK BLOCK' : 'CLEAN ALLOW'}
             </span>
           </div>
 
           {/* Baseline to Output Range Bar */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 mb-6 font-mono text-xs space-y-2">
-            <div className="flex justify-between items-center text-slate-500">
+          <div className="p-4 rounded-xl bg-black/[0.02] border border-black/[0.05] mb-5 font-mono text-xs space-y-2">
+            <div className="flex justify-between items-center text-zinc-500 text-[11px]">
               <span>Baseline Expected Risk E[f(X)]: {(baseValue * 100).toFixed(2)}%</span>
               <span>Predicted Output Risk f(x): {(predictedScore * 100).toFixed(1)}%</span>
             </div>
-            <div className="w-full h-3 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden relative">
+            <div className="w-full h-2 rounded-full bg-black/[0.06] overflow-hidden relative">
               <div 
                 className="absolute left-0 top-0 bottom-0 bg-emerald-500 opacity-40" 
                 style={{ width: `${baseValue * 100}%` }}
@@ -185,32 +181,32 @@ export const ExplainableAIModule = () => {
           </div>
 
           {/* Feature Contribution Waterfall Bars */}
-          <div className="space-y-3 font-mono text-xs">
+          <div className="space-y-2.5 font-mono text-xs">
             {featureContributions.map((item, idx) => (
-              <div key={idx} className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-1.5">
+              <div key={idx} className="p-3 rounded-xl bg-black/[0.02] border border-black/[0.05] space-y-1.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900 dark:text-white">{item.feature}</span>
-                    <span className="text-slate-400 font-normal">({item.rawValue})</span>
+                    <span className="font-bold text-zinc-900">{item.feature}</span>
+                    <span className="text-zinc-400 font-normal">({item.rawValue})</span>
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    <span className={`font-bold flex items-center gap-0.5 ${item.isPositive ? 'text-rose-500' : 'text-emerald-500'}`}>
+                    <span className={`font-bold flex items-center gap-0.5 ${item.isPositive ? 'text-rose-600' : 'text-emerald-600'}`}>
                       {item.isPositive ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
                       {item.isPositive ? '+' : ''}{item.shapValue.toFixed(3)}
                     </span>
-                    <span className="text-[10px] text-slate-400">({item.impactPct})</span>
+                    <span className="text-[10px] text-zinc-400">({item.impactPct})</span>
                   </div>
                 </div>
 
-                <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-black/[0.05] overflow-hidden">
                   <div 
                     className={`h-full rounded-full ${item.isPositive ? 'bg-rose-500' : 'bg-emerald-500'}`}
                     style={{ width: `${Math.min(Math.abs(item.shapValue) * 200, 100)}%` }}
                   />
                 </div>
 
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 italic">
+                <p className="text-[10px] text-zinc-500 italic">
                   "{item.explanation}"
                 </p>
               </div>
@@ -219,64 +215,64 @@ export const ExplainableAIModule = () => {
         </div>
 
         {/* Right 5 cols: Active Transaction Snapshot & SHAP Summary */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-5 space-y-5">
           
           {/* Transaction Attributes Card */}
-          <div className="glass-card p-6 border-t-4 border-t-[#7C3AED]">
-            <h3 className="text-sm font-bold font-mono text-slate-900 dark:text-white mb-4 flex items-center justify-between">
-              <span>ACTIVE TRANSACTION SNAPSHOT</span>
+          <div className="surface-card p-6">
+            <h3 className="text-xs font-bold font-mono text-zinc-400 uppercase tracking-wider mb-4 flex items-center justify-between border-b border-black/[0.05] pb-2">
+              <span>Active Payload Attributes</span>
               {currentTransaction.isFraud !== undefined && (
-                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                  currentTransaction.isFraud === 1 ? 'bg-rose-500/20 text-rose-500' : 'bg-emerald-500/20 text-emerald-500'
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  currentTransaction.isFraud === 1 ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                 }`}>
-                  CSV Label: {currentTransaction.isFraud === 1 ? 'Fraud (1)' : 'Legit (0)'}
+                  {currentTransaction.isFraud === 1 ? 'Ground Truth: Fraud (1)' : 'Ground Truth: Legit (0)'}
                 </span>
               )}
             </h3>
 
-            <div className="space-y-2.5 font-mono text-xs">
-              <div className="flex justify-between py-1 border-b border-slate-200/80 dark:border-white/5">
-                <span className="text-slate-400">Transaction ID (`nameOrig`)</span>
-                <span className="font-bold text-slate-900 dark:text-white">{currentTransaction.nameOrig}</span>
+            <div className="space-y-2 font-mono text-xs">
+              <div className="flex justify-between py-1 border-b border-black/[0.04]">
+                <span className="text-zinc-400">Origin Account (`nameOrig`)</span>
+                <span className="font-bold text-zinc-900">{currentTransaction.nameOrig}</span>
               </div>
 
-              <div className="flex justify-between py-1 border-b border-slate-200/80 dark:border-white/5">
-                <span className="text-slate-400">Destination (`nameDest`)</span>
-                <span className="font-bold text-slate-900 dark:text-white">{currentTransaction.nameDest}</span>
+              <div className="flex justify-between py-1 border-b border-black/[0.04]">
+                <span className="text-zinc-400">Destination (`nameDest`)</span>
+                <span className="font-bold text-zinc-900">{currentTransaction.nameDest}</span>
               </div>
 
-              <div className="flex justify-between py-1 border-b border-slate-200/80 dark:border-white/5">
-                <span className="text-slate-400">Type (`type`)</span>
-                <span className="font-bold text-indigo-500">{currentTransaction.type}</span>
+              <div className="flex justify-between py-1 border-b border-black/[0.04]">
+                <span className="text-zinc-400">Type (`type`)</span>
+                <span className="font-bold text-blue-600">{currentTransaction.type}</span>
               </div>
 
-              <div className="flex justify-between py-1 border-b border-slate-200/80 dark:border-white/5">
-                <span className="text-slate-400">Amount (`amount`)</span>
-                <span className="font-bold text-slate-900 dark:text-white">${parseFloat(currentTransaction.amount).toLocaleString()}</span>
+              <div className="flex justify-between py-1 border-b border-black/[0.04]">
+                <span className="text-zinc-400">Amount (`amount`)</span>
+                <span className="font-bold text-zinc-900">${parseFloat(currentTransaction.amount).toLocaleString()}</span>
               </div>
 
-              <div className="flex justify-between py-1 border-b border-slate-200/80 dark:border-white/5">
-                <span className="text-slate-400">Origin Old Balance</span>
-                <span className="font-bold text-slate-900 dark:text-white">${parseFloat(currentTransaction.oldbalanceOrg).toLocaleString()}</span>
+              <div className="flex justify-between py-1 border-b border-black/[0.04]">
+                <span className="text-zinc-400">Origin Old Balance</span>
+                <span className="font-bold text-zinc-900">${parseFloat(currentTransaction.oldbalanceOrg).toLocaleString()}</span>
               </div>
 
               <div className="flex justify-between py-1">
-                <span className="text-slate-400">Origin New Balance</span>
-                <span className="font-bold text-slate-900 dark:text-white">${parseFloat(currentTransaction.newbalanceOrig).toLocaleString()}</span>
+                <span className="text-zinc-400">Origin New Balance</span>
+                <span className="font-bold text-zinc-900">${parseFloat(currentTransaction.newbalanceOrig).toLocaleString()}</span>
               </div>
             </div>
           </div>
 
           {/* TreeSHAP Explanation Summary */}
-          <div className="glass-card p-6">
-            <h3 className="text-sm font-bold font-mono text-slate-900 dark:text-white mb-2 flex items-center gap-1.5 font-mono">
-              <Info className="w-4 h-4 text-[#7C3AED]" />
-              HOW TO READ SHAP VALUES
+          <div className="surface-card p-6">
+            <h3 className="text-xs font-bold font-mono text-zinc-900 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+              <Info className="w-3.5 h-3.5 text-blue-600" />
+              <span>How To Interpret SHAP Values</span>
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-mono">
-              TreeSHAP computes exact Shapley values derived from game theory. 
-              <span className="text-rose-500 font-bold ml-1">Positive SHAP values (+)</span> increase predicted risk towards a BLOCK decision.
-              <span className="text-emerald-500 font-bold ml-1">Negative SHAP values (-)</span> lower predicted risk towards an ALLOW decision.
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              TreeSHAP computes exact Shapley game-theoretic attributions. 
+              <span className="text-rose-600 font-semibold ml-1">Positive values (+)</span> increase predicted risk towards an automated BLOCK.
+              <span className="text-emerald-600 font-semibold ml-1">Negative values (-)</span> lower predicted risk towards an automated ALLOW.
             </p>
           </div>
 

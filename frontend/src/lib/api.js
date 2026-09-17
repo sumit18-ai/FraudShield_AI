@@ -1,4 +1,23 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8008';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8008';
+
+export function getAuthHeaders() {
+  const token = localStorage.getItem('fs_access_token');
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+export async function fetchWithAuth(url, options = {}) {
+  const finalUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+  const headers = {
+    ...options.headers,
+    ...getAuthHeaders()
+  };
+  return fetch(finalUrl, { ...options, headers });
+}
+
 
 export const DATASET_METADATA = {
   paysim: {

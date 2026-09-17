@@ -1,49 +1,36 @@
-from fastapi import APIRouter, HTTPException, Query
-from typing import Optional, Dict, Any
+from fastapi import APIRouter, HTTPException, Query, Body, Request, Depends
+from typing import Optional, Dict, Any, List
 from ..schemas.transaction import Transaction
 from ..core.explainer import get_explanations
+from ..core.risk_engine import risk_engine
+from ..core.graph_engine import graph_engine
+from ..core.drift_monitor import drift_monitor
+from ..core.federated_simulator import federated_simulator
+from ..core.behavioral_engine import behavioral_engine
 from ..core import data_loader
+from ..core.security import (
+    get_current_user_optional, require_role, check_rate_limit,
+    get_client_ip, record_audit_event
+)
 import math
 
 router = APIRouter()
 
-def calculate_calibrated_risk(p: float, transaction_dict: dict) -> float:
-    amount = float(transaction_dict.get("amount") or transaction_dict.get("amt") or 0.0)
-    old_bal = float(transaction_dict.get("oldbalanceOrg", 0.0))
-    new_bal = float(transaction_dict.get("newbalanceOrig", 0.0))
-    tx_type = str(transaction_dict.get("type", "")).upper()
-    error_orig = old_bal - amount - new_bal
-    
-    amount_log = math.log10(amount + 1)
-    amount_factor = min(1.0, amount_log / 6.0) # maxes out at 1,000,000
-    
-    decision = "Block" if p > 0.5 else "Allow"
-    
-    if decision == "Block":
-        base = 0.75
-        conf_factor = 0.08 * ((p - 0.5) / 0.5)
-        amt_contribution = 0.08 * amount_factor
-        bal_contribution = 0.08 if (old_bal > 0 and new_bal == 0) else 0.0
-        score = base + conf_factor + amt_contribution + bal_contribution
-        return max(0.75, min(0.99, score))
-    else:
-        if tx_type not in ["TRANSFER", "CASH_OUT"]:
-            score = 0.15 * amount_factor
-            return max(0.01, min(0.44, score))
-        else:
-            base = 0.15
-            amt_contribution = 0.25 * amount_factor
-            bal_contribution = 0.20 if (old_bal > 0 and new_bal == 0) else 0.0
-            disc_contribution = 0.10 if abs(error_orig) > 0.01 else 0.0
-            model_contribution = 0.05 * (p / 0.5)
-            score = base + amt_contribution + bal_contribution + disc_contribution + model_contribution
-            return max(0.15, min(0.74, score))
-
 @router.post("/analyze")
-async def analyze_transaction(payload: Dict[str, Any], domain: Optional[str] = Query('paysim')):
+async def analyze_transaction(
+    request: Request,
+    payload: Dict[str, Any],
+    domain: Optional[str] = 'paysim',
+    user: Optional[Dict[str, Any]] = Depends(get_current_user_optional)
+):
     import app.core.model_engine as engine
 
-    selected_domain = domain.lower() if domain else 'paysim'
+    client_ip = get_client_ip(request)
+    # Anti-abuse rate limiter: 120 req/minute per IP
+    check_rate_limit(f"analyze_{client_ip}", max_requests=120, window_seconds=60)
+
+    selected_domain = domain if isinstance(domain, str) else 'paysim'
+    selected_domain = selected_domain.lower() if selected_domain else 'paysim'
     
     # Auto-detect domain if V1 in payload
     if 'V1' in payload or 'v1' in payload:
@@ -60,48 +47,139 @@ async def analyze_transaction(payload: Dict[str, Any], domain: Optional[str] = Q
     if model is None:
         raise HTTPException(status_code=500, detail=f"Model for domain '{selected_domain}' not loaded.")
 
-    # A. Preprocess transaction features
+    # 1. Preprocess transaction features
     raw_df, scaled_data = engine.preprocess_transaction(payload, domain=selected_domain)
 
-    # B. Get raw prediction probability from ML model
-    raw_prob = float(model.predict_proba(scaled_data)[0][1])
+    # 2. Get raw ML Stacking Ensemble prediction probability
+    try:
+        raw_prob = float(model.predict_proba(scaled_data)[0][1])
+    except Exception:
+        raw_prob = 0.50
 
-    # C. Calculate Calibrated Continuous Risk Score
-    calibrated_score = calculate_calibrated_risk(raw_prob, payload)
-    risk_score = round(calibrated_score, 4)
+    sender = str(payload.get("nameOrig", "C_ANON_SRC"))
+    receiver = str(payload.get("nameDest", "M_ANON_DST"))
+    device = str(payload.get("device_id") or payload.get("device") or f"DEV_{abs(hash(sender)) % 1000}")
+    ip = str(payload.get("ip_address") or payload.get("ip") or f"192.168.1.{abs(hash(sender)) % 254}")
 
-    # D. 3-Tier Classification Decision: Safe (<45%), Needs Review (45%-75%), Fraud (>=75%)
-    if risk_score >= 0.75:
-        decision = "Fraud"
-        status = "FRAUD"
-    elif risk_score >= 0.45:
-        decision = "Needs Review"
-        status = "NEEDS_REVIEW"
-    else:
-        decision = "Safe"
-        status = "SAFE"
+    # 3. Execute Adaptive Multi-Signal Risk Engine
+    risk_output = risk_engine.compute_composite_risk(
+        ml_prob=raw_prob,
+        txn_dict=payload,
+        sender=sender,
+        receiver=receiver,
+        device=device,
+        ip=ip
+    )
 
-    # E. TreeSHAP Explanation calculation
-    explanations = get_explanations(scaled_data, meta['features']) if meta and 'features' in meta else []
+    # 4. Log into Concept Drift Monitor window
+    drift_monitor.log_incoming_transaction(payload)
 
-    # F. Return Response
+    # 5. TreeSHAP & Reason Code Generation
+    feat_names = meta['features'] if meta and 'features' in meta else list(payload.keys())
+    xai_output = get_explanations(
+        scaled_data=scaled_data,
+        feature_names=feat_names,
+        raw_payload=payload,
+        risk_score=risk_output["composite_risk_score"]
+    )
+
+    # Audit high-risk transactions
+    if risk_output["decision"] == "Block":
+        record_audit_event(
+            actor=user["email"] if user else "external_client",
+            role=user["role"] if user else "automated_system",
+            ip=client_ip,
+            action="TRANSACTION_BLOCKED",
+            status="BLOCKED",
+            details=f"High risk score ({risk_output['composite_risk_score']}) on domain {selected_domain}. Reason: {xai_output['human_readable_reason_codes'][0]['title'] if xai_output['human_readable_reason_codes'] else 'Risk Threshold Breached'}"
+        )
+
     return {
         "domain": selected_domain,
         "raw_prob": round(raw_prob, 4),
-        "risk_score": risk_score,
-        "decision": decision,
-        "status": status,
-        "is_fraud": decision == "Fraud",
-        "explanations": explanations
+        "risk_score": risk_output["composite_risk_score"],
+        "decision": risk_output["decision"],
+        "status": risk_output["status"],
+        "action_code": risk_output["action_code"],
+        "action_description": risk_output["action_description"],
+        "step_up_challenge": risk_output["step_up_challenge"],
+        "is_fraud": risk_output["decision"] == "Block",
+        "signal_breakdown": risk_output["signal_breakdown"],
+        "explanations": xai_output["feature_attributions"],
+        "reason_codes": xai_output["human_readable_reason_codes"],
+        "compliance_card": xai_output["fcra_compliance_card"]
     }
 
+# --- Graph Intelligence Endpoints ---
+@router.get("/graph/network")
+def get_graph_network():
+    return graph_engine.get_full_network_data()
+
+@router.get("/graph/rings")
+def get_detected_fraud_rings():
+    return {"fraud_rings": graph_engine.detect_all_fraud_rings()}
+
+# --- Concept Drift & MLOps Endpoints ---
+@router.get("/drift/status")
+def get_drift_status():
+    return drift_monitor.get_drift_status()
+
+@router.post("/drift/simulate-spike")
+def simulate_drift_spike(
+    request: Request,
+    drift_type: Optional[str] = "HIGH_AMOUNT_BURST",
+    user: Dict[str, Any] = Depends(require_role(["admin"]))
+):
+    d_type = drift_type if isinstance(drift_type, str) else "HIGH_AMOUNT_BURST"
+    drift_monitor.trigger_synthetic_drift(d_type)
+    record_audit_event(
+        actor=user["email"],
+        role=user["role"],
+        ip=get_client_ip(request),
+        action="DRIFT_SPIKE_SIMULATED",
+        status="SUCCESS",
+        details=f"Admin triggered synthetic concept drift spike of type: {d_type}"
+    )
+    return drift_monitor.get_drift_status()
+
+# --- Federated Learning Simulator Endpoints ---
+@router.get("/federated/state")
+def get_federated_state():
+    return federated_simulator.get_simulation_state()
+
+@router.post("/federated/simulate-round")
+def run_federated_round(
+    request: Request,
+    user: Dict[str, Any] = Depends(require_role(["admin"]))
+):
+    result = federated_simulator.run_federated_round()
+    record_audit_event(
+        actor=user["email"],
+        role=user["role"],
+        ip=get_client_ip(request),
+        action="FEDERATED_ROUND_EXECUTED",
+        status="SUCCESS",
+        details=f"Admin triggered FedAvg aggregation round {result.get('round', 'N/A')}"
+    )
+    return result
+
+
+# --- Behavioral Baseline Profile Endpoint ---
+@router.get("/behavioral/profile/{customer_id}")
+def get_customer_profile(customer_id: str):
+    return behavioral_engine.get_or_create_profile(customer_id)
+
+# --- Standard Health & Seed Endpoints ---
 @router.get("/health")
 def health_check():
     import app.core.model_engine as engine
     return {
         "status": "online", 
         "model_loaded": len(engine.domain_models) > 0,
-        "domains_loaded": list(engine.domain_models.keys())
+        "domains_loaded": list(engine.domain_models.keys()),
+        "graph_nodes_loaded": graph_engine.graph.number_of_nodes(),
+        "graph_edges_loaded": graph_engine.graph.number_of_edges(),
+        "drift_monitor_samples": len(drift_monitor.current_window)
     }
 
 @router.get("/transaction/random")

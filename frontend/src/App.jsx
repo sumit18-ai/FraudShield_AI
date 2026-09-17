@@ -1,120 +1,176 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CursorSpotlight } from './components/CursorSpotlight';
-import { Header } from './components/Header';
-import { Navigation } from './components/Navigation';
+import { Sidebar } from './components/Sidebar';
+import { TopHeader } from './components/TopHeader';
 import { DashboardModule } from './components/DashboardModule';
-import { LiveMonitoringModule } from './components/LiveMonitoringModule';
 import { TransactionAnalysisModule } from './components/TransactionAnalysisModule';
-import { ExplainableAIModule } from './components/ExplainableAIModule';
-import { ModelComparisonModule } from './components/ModelComparisonModule';
+import { LiveMonitoringModule } from './components/LiveMonitoringModule';
+import { GraphIntelligenceModule } from './components/GraphIntelligenceModule';
+import { ReportsModule } from './components/ReportsModule';
+import { SettingsModule } from './components/SettingsModule';
+import { LandingPage } from './components/LandingPage';
+import { AuthProvider, useAuth } from './lib/auth';
+import { AuthModal } from './components/AuthModal';
 
-export function App() {
-  const [activeTab, setActiveTab] = useState('analysis');
+function MainLayout() {
+  const [activeTab, setActiveTab] = useState('landing');
   const [threatMode, setThreatMode] = useState(false);
-  const [theme, setTheme] = useState('light');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.classList.remove('dark');
+  }, []);
 
-  // Global hotkeys (1 - 5) for quick navigation
+  // Global hotkeys (1 - 7) for fast keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
-      if (e.key === '1') setActiveTab('analysis');
-      if (e.key === '2') setActiveTab('explainability');
-      if (e.key === '3') setActiveTab('monitoring');
-      if (e.key === '4') setActiveTab('comparison');
-      if (e.key === '5') setActiveTab('dashboard');
+      if (e.key === '1') setActiveTab('dashboard');
+      if (e.key === '2') setActiveTab('transactions');
+      if (e.key === '3') setActiveTab('alerts');
+      if (e.key === '4') setActiveTab('risk-engine');
+      if (e.key === '5') setActiveTab('graph');
+      if (e.key === '6') setActiveTab('reports');
+      if (e.key === '7') setActiveTab('settings');
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleToggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-  };
-
   const handleToggleThreatMode = () => {
-    const nextThreat = !threatMode;
-    setThreatMode(nextThreat);
-    if (nextThreat) {
-      document.documentElement.style.setProperty('--pearl-glow', 'rgba(239, 68, 68, 0.25)');
-    } else {
-      document.documentElement.style.setProperty('--pearl-glow', theme === 'dark' ? 'rgba(139, 92, 246, 0.12)' : 'rgba(124, 58, 237, 0.08)');
-    }
+    setThreatMode(!threatMode);
   };
 
   const handleTriggerThreatShift = (isHighRisk) => {
     setThreatMode(isHighRisk);
-    if (isHighRisk) {
-      document.documentElement.style.setProperty('--pearl-glow', 'rgba(239, 68, 68, 0.25)');
-    } else {
-      document.documentElement.style.setProperty('--pearl-glow', theme === 'dark' ? 'rgba(139, 92, 246, 0.12)' : 'rgba(124, 58, 237, 0.08)');
-    }
   };
 
+  if (activeTab === 'landing') {
+    return <LandingPage onLaunchDashboard={() => setActiveTab('dashboard')} />;
+  }
+
+
   return (
-    <div className={`min-h-screen relative text-slate-900 dark:text-[#F8FAFC] selection:bg-[#7C3AED] selection:text-white transition-colors duration-500 ${
-      threatMode
-        ? theme === 'dark' ? 'bg-[#0f0408]' : 'bg-[#fff1f2]'
-        : theme === 'dark' ? 'bg-[#090D18]' : 'bg-[#F0F3FF]'
-    }`}>
-      {/* Background Vacuum & Ambient Glow System */}
-      <CursorSpotlight />
-
-      {/* Main Application Container */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        
-        {/* System Vitality Header */}
-        <Header
-          threatMode={threatMode}
-          onToggleThreatMode={handleToggleThreatMode}
-          theme={theme}
-          onToggleTheme={handleToggleTheme}
-        />
-
-        {/* Glass Pill Navigation */}
-        <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
-
-        {/* Staged Module Content with Animated Transitions */}
-        <main className="relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 15, scale: 0.99 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -15, scale: 0.99 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {activeTab === 'analysis' && <TransactionAnalysisModule onTriggerThreatShift={handleTriggerThreatShift} onNavigateTab={setActiveTab} />}
-              {activeTab === 'explainability' && <ExplainableAIModule />}
-              {activeTab === 'monitoring' && <LiveMonitoringModule />}
-              {activeTab === 'comparison' && <ModelComparisonModule />}
-              {activeTab === 'dashboard' && <DashboardModule />}
-            </motion.div>
-          </AnimatePresence>
-        </main>
-
-        {/* Footer info */}
-        <footer className="mt-16 pt-6 border-t border-slate-200/80 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-slate-500 dark:text-[#94A3B8] gap-4">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#7C3AED]" />
-            <span>FRAUDSHIELD AI • PAYSIM INFERENCE, OMNISMOTE & SHAP ANALYTICS</span>
-          </div>
-          <div>PRESS HOTKEYS <span className="text-slate-800 dark:text-[#CBD5E1] font-bold">1 - 5</span> TO SWITCH STAGES</div>
-        </footer>
-
+    <div className="min-h-screen flex bg-[#F7F7F5] text-[#111111] font-sans selection:bg-black selection:text-white relative">
+      <div className="ambient-mesh" />
+      
+      {/* 1. Left Sidebar (Desktop) */}
+      <div className="hidden md:block relative z-20">
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
+
+      {/* Mobile Drawer Navigation */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs md:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <motion.div
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+              className="w-72 h-full bg-white shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Sidebar 
+                activeTab={activeTab} 
+                setActiveTab={(tab) => {
+                  setActiveTab(tab);
+                  setIsMobileMenuOpen(false);
+                }} 
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 2. Main Content View Area */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto flex-1 flex flex-col justify-between">
+          
+          <div>
+            {/* Top Bar Header */}
+            <TopHeader
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              threatMode={threatMode}
+              onToggleThreatMode={handleToggleThreatMode}
+              onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              isMobileMenuOpen={isMobileMenuOpen}
+            />
+
+            {/* Staged Module Content with Smooth Animated Transitions */}
+            <main className="relative">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  {activeTab === 'dashboard' && (
+                    <DashboardModule 
+                      onNavigateTab={setActiveTab}
+                      searchQuery={searchQuery}
+                    />
+                  )}
+
+                  {(activeTab === 'transactions' || activeTab === 'risk-engine' || activeTab === 'analysis') && (
+                    <TransactionAnalysisModule 
+                      onTriggerThreatShift={handleTriggerThreatShift} 
+                      onNavigateTab={setActiveTab} 
+                    />
+                  )}
+
+                  {(activeTab === 'alerts' || activeTab === 'monitoring') && (
+                    <LiveMonitoringModule />
+                  )}
+
+                  {activeTab === 'graph' && (
+                    <GraphIntelligenceModule />
+                  )}
+
+                  {(activeTab === 'reports' || activeTab === 'explainability' || activeTab === 'drift' || activeTab === 'comparison') && (
+                    <ReportsModule />
+                  )}
+
+                  {(activeTab === 'settings' || activeTab === 'federated') && (
+                    <SettingsModule />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </main>
+          </div>
+
+          {/* Clean Reference Footer */}
+          <footer className="mt-12 pt-6 border-t border-slate-200/70 text-center text-xs text-slate-400 font-medium">
+            © 2024 FraudShield AI. All rights reserved.
+          </footer>
+
+        </div>
+      </div>
+
     </div>
   );
 }
 
+export function App() {
+  return (
+    <AuthProvider>
+      <MainLayout />
+      <AuthModal />
+    </AuthProvider>
+  );
+}
+
 export default App;
+

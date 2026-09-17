@@ -1,12 +1,25 @@
-FROM node:22-alpine
+# Stage 1: Build production static bundle
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json* ./
 RUN npm install
 
 COPY . .
 
-EXPOSE 3000
+# Argument to pass API URL during Docker image build
+ARG VITE_API_URL=http://localhost:8008
+ENV VITE_API_URL=$VITE_API_URL
 
-CMD ["npm", "run", "dev"]
+RUN npm run build
+
+# Stage 2: Serve optimized assets with Nginx
+FROM nginx:alpine
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

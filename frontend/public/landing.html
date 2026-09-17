@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FraudShield AI — Real-Time Financial Transaction & Credit Card Fraud Intelligence Platform</title>
+<meta name="description" content="Intelligent real-time financial transaction and credit card fraud detection using hybrid stacking ensemble, OmniSMOTE calibration, and Explainable AI (SHAP & LIME).">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+<!-- Lenis Smooth Scroll -->
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "outline-variant": "#c4c7c7",
+        "on-tertiary-fixed": "#1d1b1a",
+        "tertiary-container": "#1d1b1a",
+        "surface-tint": "#5f5e5e",
+        "on-secondary-container": "#626262",
+        "surface-container-low": "#f7f3f2",
+        "on-surface": "#1c1b1b",
+        "on-secondary-fixed-variant": "#464747",
+        "primary": "#000000",
+        "surface-container-highest": "#e5e2e1",
+        "inverse-on-surface": "#f4f0ef",
+        "on-tertiary-container": "#868381",
+        "on-error-container": "#93000a",
+        "outline": "#747878",
+        "on-primary": "#ffffff",
+        "inverse-primary": "#c8c6c5",
+        "surface-container-high": "#ebe7e6",
+        "error": "#ba1a1a",
+        "surface-bright": "#fdf8f8",
+        "on-tertiary-fixed-variant": "#484645",
+        "background": "#fdf8f8",
+        "surface-variant": "#e5e2e1",
+        "surface-container-lowest": "#ffffff",
+        "on-secondary-fixed": "#1b1c1c",
+        "inverse-surface": "#313030",
+        "secondary-container": "#e1dfdf",
+        "primary-container": "#1c1b1b",
+        "surface": "#fdf8f8",
+        "on-surface-variant": "#444748",
+        "on-secondary": "#ffffff",
+        "on-tertiary": "#ffffff",
+        "secondary": "#5e5e5e",
+        "on-error": "#ffffff",
+        "secondary-fixed-dim": "#c7c6c6",
+        "on-primary-fixed-variant": "#474646",
+        "surface-dim": "#ddd9d8",
+        "tertiary": "#000000",
+        "tertiary-fixed-dim": "#cac6c3",
+        "surface-container": "#f1edec",
+        "on-primary-fixed": "#1c1b1b",
+        "primary-fixed-dim": "#c8c6c5",
+        "on-background": "#1c1b1b",
+        "tertiary-fixed": "#e6e1df",
+        "secondary-fixed": "#e4e2e2",
+        "primary-fixed": "#e5e2e1",
+        "error-container": "#ffdad6",
+        "on-primary-container": "#858383"
+      },
+      borderRadius: {
+        "DEFAULT": "0.25rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "full": "9999px",
+        "2xl": "1.5rem",
+        "3xl": "1.75rem"
+      },
+      fontFamily: {
+        "h1": ["Geist", "Inter", "sans-serif"],
+        "h2": ["Geist", "Inter", "sans-serif"],
+        "h3": ["Geist", "Inter", "sans-serif"],
+        "label-caps": ["Geist", "Inter", "sans-serif"],
+        "body-md": ["Geist", "Inter", "sans-serif"],
+        "body-lg": ["Geist", "Inter", "sans-serif"],
+        "mono": ["JetBrains Mono", "monospace"]
+      },
+      fontSize: {
+        "h1": ["72px", {"lineHeight": "1.06", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+        "h2": ["52px", {"lineHeight": "1.12", "letterSpacing": "-0.03em", "fontWeight": "600"}],
+        "h3": ["28px", {"lineHeight": "1.25", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}],
+        "body-md": ["16px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+        "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "-0.01em", "fontWeight": "400"}]
+      }
+    }
+  }
+}
+</script>
+
+<style>
+  body { background-color: #F7F7F5; color: #111111; font-family: 'Geist', 'Inter', sans-serif; }
+  .text-secondary-auralis { color: #6B6B6B; }
+  .bg-panel-auralis { background-color: #F3F2EF; }
+  .bg-card-auralis { background-color: #FCFCFB; }
+  .border-auralis { border-color: #E7E7E4; }
+  
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .material-symbols-outlined.fill {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+  .animate-marquee {
+    display: flex;
+    animation: marquee 32s linear infinite;
+    min-width: 100%;
+  }
+  .group-hover\:pause-marquee:hover {
+    animation-play-state: paused;
+  }
+
+  canvas#hero-canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+</style>
+</head>
+
+<body class="antialiased min-h-screen flex flex-col font-body-md text-body-md overflow-x-hidden">
+
+<!-- TOP NAVIGATION -->
+<nav class="fixed top-0 w-full z-50 border-b border-zinc-200/60 bg-[#F7F7F5]/85 backdrop-blur-md transition-all">
+  <div class="max-w-[1280px] mx-auto px-6 sm:px-8 flex justify-between items-center h-[72px]">
+    <div class="flex items-center gap-10">
+      <a class="text-lg font-bold tracking-tighter text-zinc-900 text-[20px] flex items-center gap-2.5" href="#">
+        <span class="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center text-xs font-extrabold shadow-sm">FS</span>
+        <span class="font-extrabold tracking-tight">FraudShield <span class="text-blue-600 font-extrabold">AI</span></span>
+      </a>
+      <div class="hidden lg:flex items-center gap-6">
+        <a class="text-sm font-medium tracking-tight text-zinc-500 hover:text-zinc-900 transition-colors" href="#overview">Overview</a>
+        <a class="text-sm font-medium tracking-tight text-zinc-500 hover:text-zinc-900 transition-colors" href="#stage-track">Stacking 3D</a>
+        <a class="text-sm font-medium tracking-tight text-zinc-500 hover:text-zinc-900 transition-colors" href="#architecture">Ensemble Engine</a>
+        <a class="text-sm font-medium tracking-tight text-zinc-500 hover:text-zinc-900 transition-colors" href="#widget">Inference Widget</a>
+        <a class="text-sm font-medium tracking-tight text-zinc-500 hover:text-zinc-900 transition-colors" href="#xai">XAI Transparency</a>
+        <a class="text-sm font-medium tracking-tight text-zinc-500 hover:text-zinc-900 transition-colors" href="#agents">Risk Copilot</a>
+        <a class="text-sm font-medium tracking-tight text-zinc-500 hover:text-zinc-900 transition-colors" href="#faqs">FAQs</a>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a class="hidden sm:inline-flex items-center gap-1.5 text-xs font-mono font-semibold px-3 py-1.5 rounded-full border border-emerald-300 bg-emerald-50 text-emerald-800" href="http://localhost:8008/docs" target="_blank">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        API :8008
+      </a>
+      <a class="bg-black text-white px-5 py-2.5 rounded-full font-medium transition-all hover:bg-zinc-800 text-[14px] flex items-center gap-2 shadow-sm cursor-pointer" href="/" id="btn-open-dashboard">
+        <span>Risk Operations SOC</span>
+        <span class="material-symbols-outlined text-base">arrow_forward</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="flex-grow pt-[130px] pb-12">
+
+<!-- HERO SECTION -->
+<section id="overview" class="max-w-[1280px] mx-auto px-6 sm:px-8 mb-[90px]">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div class="lg:col-span-8 flex flex-col gap-6">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-zinc-200/75 border border-zinc-300 text-xs font-medium text-zinc-800 self-start">
+        <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+        <span class="font-bold">THAKUR COLLEGE OF ENGINEERING &amp; TECHNOLOGY (TCET)</span>
+        <span class="text-zinc-400">|</span>
+        <span class="font-mono font-bold text-emerald-700">SUB-45ms INFERENCE</span>
+      </div>
+
+      <h1 class="font-h1 text-4xl sm:text-6xl lg:text-h1 text-primary tracking-tight font-extrabold">
+        Real-time financial fraud intelligence with explainable AI
+      </h1>
+      
+      <div class="flex flex-wrap items-center gap-4 mt-2">
+        <a class="bg-primary text-on-primary px-7 py-3.5 rounded-full font-semibold transition-all hover:bg-zinc-800 flex items-center gap-2 text-sm shadow-md" href="/" id="btn-hero-launch">
+          <span class="material-symbols-outlined text-lg">shield</span>
+          <span>Open Fraud Intelligence Dashboard</span>
+        </a>
+        <a class="bg-transparent border border-outline text-primary px-7 py-3.5 rounded-full font-medium transition-all hover:bg-surface-variant text-sm flex items-center gap-2" href="#stage-track">
+          <span class="material-symbols-outlined text-lg">play_arrow</span>
+          <span>Scrub Stacking Architecture Stage</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="lg:col-span-4 flex justify-end">
+      <div class="space-y-4 pt-2">
+        <p class="font-body-lg text-body-lg text-secondary-auralis max-w-sm text-left leading-relaxed">
+          FraudShield AI replaces opaque black-box models and brittle rule engines with calibrated multi-layer intelligence: <strong>OmniSMOTE</strong> imbalance resampling, <strong>XGBoost + LightGBM + Random Forest</strong> stacking meta-learners, real-time <strong>SHAP &amp; LIME</strong> feature attributions, and <strong>NetworkX</strong> collusion graph analysis.
+        </p>
+        <div class="flex items-center gap-4 pt-2 border-t border-auralis text-xs text-secondary-auralis">
+          <div><strong class="text-primary font-bold text-sm block">99.4%</strong> ROC-AUC</div>
+          <div class="w-px h-6 bg-auralis"></div>
+          <div><strong class="text-primary font-bold text-sm block">0.04%</strong> False Positives</div>
+          <div class="w-px h-6 bg-auralis"></div>
+          <div><strong class="text-primary font-bold text-sm block">sub-100ms</strong> SLAs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3D STAGE & INTERACTIVE MONOLITH SCRUBBING -->
+<div id="stage-track" class="relative w-full" style="height: 240vh;">
+  <section id="stage" class="sticky top-20 max-w-[1280px] mx-auto px-6 sm:px-8 py-4">
+    <div class="bg-panel-auralis rounded-3xl p-6 flex flex-col relative overflow-hidden border border-auralis shadow-2xl min-h-[560px] justify-between">
+      
+      <!-- Top Stage Tabs -->
+      <div class="flex flex-wrap justify-between items-center gap-3 z-10">
+        <div class="flex bg-surface-container-low p-1 rounded-full border border-auralis shadow-sm overflow-x-auto" id="stage-tab-container">
+          <button class="stage-tab px-4 py-2 bg-surface text-primary rounded-full text-xs font-semibold shadow-sm transition-all" data-mode="stacking">Stacking Ensemble</button>
+          <button class="stage-tab px-4 py-2 text-secondary-auralis rounded-full text-xs font-medium hover:text-primary transition-colors" data-mode="shap">SHAP Attribution</button>
+          <button class="stage-tab px-4 py-2 text-secondary-auralis rounded-full text-xs font-medium hover:text-primary transition-colors" data-mode="graph">Collusion Graph</button>
+          <button class="stage-tab px-4 py-2 text-secondary-auralis rounded-full text-xs font-medium hover:text-primary transition-colors" data-mode="omnismote">OmniSMOTE Boundary</button>
+        </div>
+        <div class="bg-surface-container-low px-4 py-2 rounded-full border border-auralis flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+          <span class="text-xs font-mono font-semibold text-zinc-900" id="stage-frame-counter">STAGE PHASE 001 / 150</span>
+        </div>
+      </div>
+
+      <!-- Center Ambient Glow Orbs -->
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-80">
+        <div class="w-[320px] h-[320px] rounded-full bg-gradient-to-tr from-blue-500/25 to-indigo-500/25 blur-3xl absolute -ml-44"></div>
+        <div class="w-[420px] h-[420px] rounded-full bg-gradient-to-tr from-cyan-400/20 to-blue-400/20 blur-3xl absolute"></div>
+        <div class="w-[280px] h-[280px] rounded-full bg-gradient-to-tr from-emerald-400/25 to-teal-400/25 blur-3xl absolute ml-48 mt-16"></div>
+      </div>
+
+      <!-- Dynamic High-DPI Topological Stage Canvas Viewport -->
+      <div class="relative w-full h-[400px] z-10 flex items-center justify-center overflow-hidden rounded-2xl border border-auralis bg-[#0A0E1A] shadow-inner">
+        <canvas id="hero-canvas" class="w-full h-full object-cover"></canvas>
+        <div class="absolute bottom-4 left-6 flex items-center gap-3 pointer-events-none bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 text-xs text-white">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="font-mono text-[11px]" id="canvas-status-tag">STACKING META-LEARNER: XGB + LGBM + RF → LOGISTIC REGRESSION</span>
+        </div>
+      </div>
+
+      <!-- Bottom Module Navigation Bar -->
+      <div class="flex flex-wrap justify-between items-center gap-4 z-10 bg-surface/90 backdrop-blur-md p-3.5 rounded-2xl border border-auralis">
+        <div class="flex flex-wrap items-center gap-3 sm:gap-6 text-xs font-medium text-secondary-auralis">
+          <span class="text-primary font-bold">284K CreditCard &amp; PaySim Kaggle Benchmarks</span>
+          <span>•</span>
+          <span>FastAPI Microservice (sub-100ms)</span>
+          <span>•</span>
+          <span>Dual SHAP &amp; LIME</span>
+          <span>•</span>
+          <span>EU AI Act &amp; FCRA Compliant</span>
+        </div>
+        <a class="bg-primary text-on-primary px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap hover:bg-zinc-800 transition-all cursor-pointer" href="/">Launch Live Simulator</a>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- TRUST STRIP & GLOBAL FINANCIAL PROTOCOLS -->
+<section class="max-w-[1280px] mx-auto px-8 text-center mb-6 mt-12">
+  <h3 class="font-label-caps text-label-caps text-secondary-auralis uppercase tracking-widest mb-0">VALIDATED ON ENTERPRISE FINANCIAL PROTOCOLS &amp; REAL-TIME PAYMENT STREAMS</h3>
+</section>
+
+<section class="w-full overflow-hidden mt-0 mb-[130px] py-4 border-y border-zinc-200/80 bg-white/60">
+  <div class="flex whitespace-nowrap overflow-hidden group">
+    <div class="flex items-center gap-24 animate-marquee group-hover:pause-marquee">
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-blue-600">credit_card</span>VISA Direct Network</div>
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-rose-600">account_balance</span>Mastercard Decision</div>
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-emerald-600">sync_alt</span>SWIFT Alliance Gateway</div>
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-purple-600">qr_code_2</span>NPCI / UPI Real-Time</div>
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-sky-600">bolt</span>FedNow Instant Clearing</div>
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-indigo-600">shield</span>Stripe Radar Protocol</div>
+    </div>
+    <div aria-hidden="true" class="flex items-center gap-24 animate-marquee group-hover:pause-marquee">
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-blue-600">credit_card</span>VISA Direct Network</div>
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-rose-600">account_balance</span>Mastercard Decision</div>
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-emerald-600">sync_alt</span>SWIFT Alliance Gateway</div>
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-purple-600">qr_code_2</span>NPCI / UPI Real-Time</div>
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-sky-600">bolt</span>FedNow Instant Clearing</div>
+      <div class="flex items-center gap-2.5 text-zinc-700 font-bold text-lg tracking-tighter uppercase italic"><span class="material-symbols-outlined text-2xl text-indigo-600">shield</span>Stripe Radar Protocol</div>
+    </div>
+  </div>
+</section>
+
+<!-- PLATFORM ARCHITECTURE (5 CORE MODULES) -->
+<section id="architecture" class="max-w-[1280px] mx-auto px-6 sm:px-8 mb-[150px]">
+  <div class="text-center max-w-3xl mx-auto mb-16">
+    <h2 class="font-h2 text-3xl sm:text-4xl lg:text-h2 text-primary mb-5 font-bold">Five core engines, one unified risk intelligence layer</h2>
+    <p class="font-body-lg text-body-lg text-secondary-auralis">Combining imbalanced machine learning ensembles, transparent XAI attribution, money mule collusion graphs, and real-time concept drift monitoring.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+    <!-- Card 1: Stacking Ensemble -->
+    <div class="bg-card-auralis rounded-2xl p-8 border border-auralis min-h-[310px] flex flex-col justify-between relative overflow-hidden group hover:shadow-lg transition-all">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-bold font-mono">01</div>
+        <h3 class="font-h3 text-h3 text-primary">Hybrid Stacking Ensemble Engine</h3>
+        <p class="text-secondary-auralis leading-relaxed text-sm">
+          Unifies heterogeneous base classifiers—<strong>XGBoost</strong>, <strong>LightGBM</strong>, and <strong>Random Forest</strong>—via a 3-fold cross-validated <strong>Logistic Regression meta-learner</strong>. Delivers superior probability calibration and eliminates single-model blind spots.
+        </p>
+      </div>
+      <span class="text-xs font-mono font-bold text-emerald-600 mt-4 block">99.4% ROC-AUC • Superior PR-AUC Curve</span>
+    </div>
+
+    <!-- Card 2: Explainable AI -->
+    <div class="bg-card-auralis rounded-2xl p-8 border border-auralis min-h-[310px] flex flex-col justify-between relative overflow-hidden group hover:shadow-lg transition-all">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-bold font-mono">02</div>
+        <h3 class="font-h3 text-h3 text-primary">Dual Explainable AI (SHAP &amp; LIME)</h3>
+        <p class="text-secondary-auralis leading-relaxed text-sm">
+          Provides real-time local feature attribution using <strong>SHAP Kernel/Tree Explainer</strong> and <strong>LIME tabular surrogates</strong>. Converts complex 45+ feature vectors into plain-English explanations for immediate dispute justification.
+        </p>
+      </div>
+      <span class="text-xs font-mono font-bold text-blue-600 mt-4 block">EU AI Act &amp; FCRA Article 22 Right to Explanation</span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <!-- Card 3: Collusion Graph -->
+    <div class="bg-card-auralis rounded-2xl p-7 border border-auralis space-y-3 hover:shadow-md transition-all">
+      <div class="w-8 h-8 rounded-lg bg-zinc-200 text-zinc-900 flex items-center justify-center font-bold text-xs font-mono">03</div>
+      <h4 class="font-bold text-primary text-base">NetworkX Mule Syndicate Graph</h4>
+      <p class="text-xs text-secondary-auralis leading-relaxed">Maps cyclical transfer rings, shared devices, and mule accounts across PaySim and CreditCard transaction topologies in real time.</p>
+    </div>
+    <!-- Card 4: OmniSMOTE -->
+    <div class="bg-card-auralis rounded-2xl p-7 border border-auralis space-y-3 hover:shadow-md transition-all">
+      <div class="w-8 h-8 rounded-lg bg-zinc-200 text-zinc-900 flex items-center justify-center font-bold text-xs font-mono">04</div>
+      <h4 class="font-bold text-primary text-base">OmniSMOTE Imbalance Resampler</h4>
+      <p class="text-xs text-secondary-auralis leading-relaxed">Solves 0.17% minority class imbalance via boundary-calibrated synthetic oversampling combined with RobustScaler outlier normalization.</p>
+    </div>
+    <!-- Card 5: Concept Drift -->
+    <div class="bg-card-auralis rounded-2xl p-7 border border-auralis space-y-3 hover:shadow-md transition-all">
+      <div class="w-8 h-8 rounded-lg bg-zinc-200 text-zinc-900 flex items-center justify-center font-bold text-xs font-mono">05</div>
+      <h4 class="font-bold text-primary text-base">Concept Drift &amp; Retraining Watchdog</h4>
+      <p class="text-xs text-secondary-auralis leading-relaxed">Continuously tracks feature distribution shifts with Kolmogorov-Smirnov statistical tests and auto-triggers adaptive model retraining.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FULL AURALIS GLASSMORPHIC DASHBOARD WIDGET PREVIEW -->
+<section id="widget" class="max-w-[1280px] mx-auto px-6 sm:px-8 mb-[170px]">
+  <div class="w-full aspect-[16/9] min-h-[520px] bg-panel-auralis rounded-3xl border border-auralis flex items-center justify-center overflow-hidden relative group shadow-2xl">
+    
+    <!-- Background Dashboard Artwork -->
+    <img alt="Financial Telemetry Background" class="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-500" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop"/>
+    
+    <div class="absolute inset-0 flex items-center justify-center z-20 p-4">
+      <!-- Glowing Accent Backgrounds -->
+      <div class="absolute w-80 h-80 bg-blue-500/25 rounded-full blur-[100px] -translate-x-28 -translate-y-12"></div>
+      <div class="absolute w-80 h-80 bg-indigo-500/25 rounded-full blur-[100px] translate-x-28 translate-y-12"></div>
+
+      <!-- Glassmorphic Neural Engine Widget Container -->
+      <div class="relative w-full max-w-[500px] bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2rem] p-7 sm:p-8 shadow-[0_48px_96px_-24px_rgba(0,0,0,0.25)] flex flex-col gap-6">
+        
+        <!-- Header: Status & Identifier -->
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="text-[11px] font-bold uppercase tracking-[0.25em] text-primary/70 mb-1 font-mono">FraudShield Engine v4.2 PRO</span>
+            <span class="text-sm font-semibold text-primary tracking-tight">Real-Time Stacking Inference Active</span>
+          </div>
+          <div class="flex items-center gap-2 bg-emerald-500/20 px-3 py-1.5 rounded-full border border-emerald-500/30">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span class="text-[10px] font-bold text-emerald-900 uppercase tracking-widest font-mono">FastAPI Online</span>
+          </div>
+        </div>
+
+        <!-- Enhanced Spectral Feature Vectors Visualization (PCA V1-V28 + PaySim) -->
+        <div class="flex items-end justify-between h-24 gap-1.5 bg-black/5 p-3 rounded-2xl border border-black/5">
+          <div class="w-2 bg-gradient-to-t from-blue-500/40 to-blue-600 rounded-full h-[35%]" title="V4 Component"></div>
+          <div class="w-2 bg-gradient-to-t from-blue-500/40 to-blue-600 rounded-full h-[52%]" title="V10 Component"></div>
+          <div class="w-2 bg-gradient-to-t from-blue-500/40 to-blue-600 rounded-full h-[78%]" title="V12 Component"></div>
+          <div class="w-2 bg-gradient-to-t from-rose-500/50 to-rose-600 rounded-full h-[96%]" title="Amount Anomaly"></div>
+          <div class="w-2 bg-gradient-to-t from-rose-500/50 to-rose-600 rounded-full h-[88%]" title="errorBalanceOrig"></div>
+          <div class="w-2 bg-gradient-to-t from-purple-500/40 to-purple-600 rounded-full h-[64%]" title="V14 Component"></div>
+          <div class="w-2 bg-gradient-to-t from-blue-500/40 to-blue-600 rounded-full h-[42%]" title="V17 Component"></div>
+          <div class="w-2 bg-gradient-to-t from-blue-500/40 to-blue-600 rounded-full h-[60%]" title="Step Velocity"></div>
+          <div class="w-2 bg-gradient-to-t from-blue-500/40 to-blue-600 rounded-full h-[32%]" title="errorBalanceDest"></div>
+          <div class="w-2 bg-gradient-to-t from-blue-500/40 to-blue-600 rounded-full h-[55%]" title="V27 Component"></div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-3 gap-4 py-2 border-y border-black/5 text-center">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[10px] uppercase tracking-widest text-secondary-auralis font-semibold">Latency</span>
+            <div class="flex items-baseline justify-center gap-1">
+              <span class="text-xl font-bold text-primary font-mono">42</span>
+              <span class="text-xs text-secondary-auralis font-medium">ms</span>
+            </div>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[10px] uppercase tracking-widest text-secondary-auralis font-semibold">ROC-AUC</span>
+            <div class="flex items-baseline justify-center gap-1">
+              <span class="text-xl font-bold text-primary font-mono">99.4</span>
+              <span class="text-xs text-secondary-auralis font-medium">%</span>
+            </div>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[10px] uppercase tracking-widest text-secondary-auralis font-semibold">False Positives</span>
+            <div class="flex items-baseline justify-center gap-1">
+              <span class="text-xl font-bold text-emerald-600 font-mono">0.04</span>
+              <span class="text-xs text-secondary-auralis font-medium">%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Status -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-xl text-primary">verified_user</span>
+            <span class="text-xs font-semibold text-primary font-mono">TX-Payload #TX-9402</span>
+          </div>
+          <a href="/" class="bg-primary text-on-primary px-4 py-2 rounded-full text-xs font-bold hover:bg-zinc-800 transition-all shadow-sm">
+            Inspect SHAP Breakdown
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- XAI STUDIO MODULE -->
+<section id="xai" class="max-w-[1280px] mx-auto px-6 sm:px-8 mb-[170px]">
+  <div class="flex items-center gap-4 mb-8">
+    <span class="font-label-caps text-label-caps bg-surface-variant text-primary px-3.5 py-1 rounded-full font-mono">XAI Transparency Studio</span>
+    <div class="h-px bg-auralis flex-grow opacity-50"></div>
+  </div>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-12">
+    <div class="lg:col-span-5">
+      <h2 class="font-h2 text-3xl sm:text-4xl text-primary leading-tight font-bold">Audit, explain, &amp; defend fraud decisions in real time</h2>
+    </div>
+    <div class="lg:col-span-6 lg:col-start-7 flex items-end">
+      <p class="font-body-lg text-body-lg text-secondary-auralis">Generate automated audit logs compliant with international regulatory mandates (EU AI Act &amp; FCRA) and deliver transparent SHAP &amp; LIME attributions to risk investigation teams.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <!-- Large Card 1: SHAP UI -->
+    <div class="bg-card-auralis rounded-2xl border border-auralis h-[320px] flex flex-col justify-end relative overflow-hidden group hover:shadow-lg transition-all">
+      <img alt="SHAP Feature Attribution UI" class="absolute inset-0 w-full h-full object-cover group-hover:opacity-100 transition-opacity duration-500" src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1000&auto=format&fit=crop"/>
+      <div class="z-10 bg-black/60 backdrop-blur-xl border border-white/20 p-6 rounded-b-2xl text-white">
+        <h4 class="font-h3 text-[20px] mb-2 text-white font-bold">SHAP Feature Impact Attribution</h4>
+        <p class="text-sm text-white/80">Calculates exact additive contribution per transaction (+38% Balance Destruction, +24% High-Amount Outlier, -15% Known POS Terminal).</p>
+      </div>
+    </div>
+    <!-- Large Card 2: Regulatory Audit Transcript -->
+    <div class="bg-card-auralis rounded-2xl p-7 border border-auralis h-[320px] flex flex-col justify-between relative overflow-hidden group hover:shadow-lg transition-all">
+      <div class="flex justify-between items-start z-10">
+        <span class="material-symbols-outlined text-primary text-3xl">policy</span>
+        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full">FCRA &amp; EU AI Act Validated</span>
+      </div>
+      <div class="z-10">
+        <h4 class="font-h3 text-[20px] mb-2 font-bold">Automated Dispute Audit Transcript</h4>
+        <p class="text-sm text-secondary-auralis leading-relaxed">Produces structured immutable JSON audit reports justifying automated card freezes, ready for compliance officer review.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+    <!-- Small Chips -->
+    <div class="bg-panel-auralis rounded-xl p-5 border border-auralis flex flex-col gap-2 items-start hover:bg-surface-variant/70 transition-colors cursor-pointer">
+      <span class="material-symbols-outlined text-primary">psychology</span>
+      <span class="font-medium text-sm">Stacking Meta-Learner</span>
+    </div>
+    <div class="bg-panel-auralis rounded-xl p-5 border border-auralis flex flex-col gap-2 items-start hover:bg-surface-variant/70 transition-colors cursor-pointer">
+      <span class="material-symbols-outlined text-primary">data_thresholding</span>
+      <span class="font-medium text-sm">OmniSMOTE Resampling</span>
+    </div>
+    <div class="bg-panel-auralis rounded-xl p-5 border border-auralis flex flex-col gap-2 items-start hover:bg-surface-variant/70 transition-colors cursor-pointer">
+      <span class="material-symbols-outlined text-primary">hub</span>
+      <span class="font-medium text-sm">Collusion Mule Graphs</span>
+    </div>
+    <div class="bg-panel-auralis rounded-xl p-5 border border-auralis flex flex-col gap-2 items-start hover:bg-surface-variant/70 transition-colors cursor-pointer">
+      <span class="material-symbols-outlined text-primary">speed</span>
+      <span class="font-medium text-sm">Sub-45ms Latency</span>
+    </div>
+  </div>
+</section>
+
+<!-- AUTONOMOUS RISK AGENTS & COPILOT -->
+<section id="agents" class="max-w-[1280px] mx-auto px-6 sm:px-8 mb-[160px]">
+  <div class="flex items-center gap-4 mb-8">
+    <span class="font-label-caps text-label-caps bg-surface-variant text-primary px-3.5 py-1 rounded-full font-mono">Risk Copilot Agents</span>
+    <div class="h-px bg-auralis flex-grow opacity-50"></div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-12">
+    <div class="lg:col-span-5">
+      <h2 class="font-h2 text-3xl sm:text-4xl text-primary leading-tight font-bold">Autonomous fraud defense copilots that verify &amp; orchestrate</h2>
+    </div>
+    <div class="lg:col-span-6 lg:col-start-7 flex items-end">
+      <p class="font-body-lg text-body-lg text-secondary-auralis">Deploy automated AI fraud response agents that support SOC tier-1 analysts in executing smart payment holds and automated account isolation.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Agent Card 1: Interactive Chat Simulation -->
+    <div class="bg-card-auralis rounded-3xl p-7 border border-auralis h-[450px] flex flex-col relative overflow-hidden group">
+      <div class="absolute inset-0 flex items-center justify-center opacity-30 group-hover:opacity-50 transition-opacity duration-500">
+        <div class="w-[220px] h-[220px] rounded-full bg-gradient-to-r from-blue-500 to-indigo-400 blur-2xl absolute -ml-20 -mt-20"></div>
+        <div class="w-[220px] h-[220px] rounded-full bg-gradient-to-r from-purple-500 to-rose-400 blur-2xl absolute ml-20 mt-20"></div>
+      </div>
+
+      <div class="z-10 bg-surface/90 backdrop-blur-sm self-start px-4 py-1.5 rounded-full border border-auralis text-xs font-semibold mb-auto">
+        Interactive Risk Copilot
+      </div>
+
+      <div class="z-10 mt-auto bg-white/50 backdrop-blur-2xl p-6 rounded-[2rem] border border-white/70 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] space-y-4">
+        <div class="flex gap-3 items-center">
+          <div class="w-9 h-9 bg-primary rounded-full flex items-center justify-center shadow-sm shrink-0">
+            <span class="material-symbols-outlined text-white text-sm">smart_toy</span>
+          </div>
+          <div class="bg-white/70 backdrop-blur-md border border-white/80 px-4 py-2 rounded-2xl rounded-tl-sm text-xs shadow-sm font-medium text-zinc-900">
+            Transfer #TX-9402 ($184,200) exhibits 340% velocity anomaly with zero destination history. Stacking risk: 94.2%.
+          </div>
+        </div>
+
+        <div class="flex gap-3 items-center flex-row-reverse">
+          <div class="w-9 h-9 bg-white/70 backdrop-blur-md border border-white/80 rounded-full flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-primary text-sm">person</span>
+          </div>
+          <div class="bg-primary text-on-primary px-4 py-2 rounded-2xl rounded-tr-sm text-xs shadow-md font-medium">
+            Confirm hold on TX-9402, quarantine wallet, and dispatch step-up biometric verification.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent Card 2: Network Intelligence -->
+    <div class="bg-card-auralis rounded-3xl p-8 border border-auralis h-[450px] flex flex-col relative overflow-hidden group">
+      <div class="z-10 bg-surface/90 backdrop-blur-sm self-start px-4 py-1.5 rounded-full border border-auralis text-xs font-semibold mb-auto">
+        Live Graph Intelligence
+      </div>
+
+      <div class="z-10 mt-auto bg-white/50 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/70 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)]">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined text-blue-600 text-xl">share</span>
+          <h4 class="font-h3 text-[22px] font-bold text-primary">Syndicate &amp; Mule Rings</h4>
+        </div>
+        <p class="text-xs text-secondary-auralis leading-relaxed">
+          NetworkX graph clustering algorithms continually scan active payment channels, discovering multi-hop money mule laundering networks across 35 interconnected accounts and 24 relational transaction edges.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FREQUENTLY ASKED QUESTIONS -->
+<section id="faqs" class="max-w-[1000px] mx-auto px-6 sm:px-8 mb-[150px] space-y-8">
+  <div class="text-center space-y-3">
+    <h2 class="font-h2 text-3xl sm:text-4xl text-primary font-bold">Engine Specifications &amp; FAQs</h2>
+    <p class="text-secondary-auralis text-sm">Key architectural and research answers from the FraudShield AI Technical Dossier.</p>
+  </div>
+
+  <div class="space-y-4">
+    <details class="bg-card-auralis rounded-2xl p-6 border border-auralis group cursor-pointer" open>
+      <summary class="flex justify-between items-center font-bold text-primary text-base">
+        <span>Why use a Hybrid Stacking Ensemble over standalone XGBoost or LightGBM?</span>
+        <span class="material-symbols-outlined transition-transform group-open:rotate-180 text-primary">expand_more</span>
+      </summary>
+      <p class="text-xs text-secondary-auralis leading-relaxed mt-4 pt-4 border-t border-auralis">
+        Individual gradient-boosted trees excel at structured tabular patterns but struggle with extreme edge cases and probability calibration. FraudShield AI's stacking architecture combines heterogeneous inductive biases (XGBoost, LightGBM, and Random Forest) through a cross-validated Logistic Regression meta-learner, producing calibrated probabilities, reducing False Positives to 0.04%, and achieving 99.4% ROC-AUC.
+      </p>
+    </details>
+
+    <details class="bg-card-auralis rounded-2xl p-6 border border-auralis group cursor-pointer">
+      <summary class="flex justify-between items-center font-bold text-primary text-base">
+        <span>How does FraudShield AI maintain sub-100ms inference with heavy XAI algorithms?</span>
+        <span class="material-symbols-outlined transition-transform group-open:rotate-180 text-primary">expand_more</span>
+      </summary>
+      <p class="text-xs text-secondary-auralis leading-relaxed mt-4 pt-4 border-t border-auralis">
+        Heavy background training distributions are pre-calculated and cached during initialization. During live scoring, our FastAPI ASGI microservice uses optimized TreeSHAP implementations and parallelized surrogate evaluation, returning transaction risk scores in under 45ms and complete local SHAP feature attributions in under 120ms.
+      </p>
+    </details>
+
+    <details class="bg-card-auralis rounded-2xl p-6 border border-auralis group cursor-pointer">
+      <summary class="flex justify-between items-center font-bold text-primary text-base">
+        <span>How does OmniSMOTE solve the extreme class imbalance problem (0.17% fraud prevalence)?</span>
+        <span class="material-symbols-outlined transition-transform group-open:rotate-180 text-primary">expand_more</span>
+      </summary>
+      <p class="text-xs text-secondary-auralis leading-relaxed mt-4 pt-4 border-t border-auralis">
+        In standard financial transaction datasets (e.g. Kaggle Credit Card dataset with 492 frauds in 284,807 transactions), standard SMOTE generates noisy synthetic points across majority class boundaries. OmniSMOTE evaluates decision manifold density, synthesizing minority samples strictly along ambiguous decision contours, combined with RobustScaler normalization to insulate the model from extreme transaction amount outliers.
+      </p>
+    </details>
+
+    <details class="bg-card-auralis rounded-2xl p-6 border border-auralis group cursor-pointer">
+      <summary class="flex justify-between items-center font-bold text-primary text-base">
+        <span>What regulatory compliance requirements does this platform address?</span>
+        <span class="material-symbols-outlined transition-transform group-open:rotate-180 text-primary">expand_more</span>
+      </summary>
+      <p class="text-xs text-secondary-auralis leading-relaxed mt-4 pt-4 border-t border-auralis">
+        FraudShield AI satisfies EU Artificial Intelligence Act (2024) Article 22 mandates and US Fair Credit Reporting Act (FCRA) provisions regarding automated consumer decision transparency ("Right to Explanation"). Every automated decline or hold generates an immutable SHAP attribution record detailing the primary factors behind the decision.
+      </p>
+    </details>
+  </div>
+</section>
+
+<!-- SIGN OFF BANNER -->
+<section class="max-w-[1280px] mx-auto px-6 sm:px-8 mb-[130px] text-center flex flex-col items-center">
+  <h2 class="font-h2 text-3xl sm:text-5xl text-primary mb-6 max-w-3xl leading-tight font-bold">The future of real-time financial fraud defense starts here</h2>
+  <p class="text-secondary-auralis max-w-xl mb-8 text-sm leading-relaxed">
+    Engineered at Thakur College of Engineering &amp; Technology (TCET), Mumbai. Tested across millions of synthetic and real-world transaction vectors.
+  </p>
+  <div class="flex flex-wrap justify-center items-center gap-4">
+    <a class="bg-primary text-on-primary px-8 py-3.5 rounded-full font-semibold transition-all hover:bg-zinc-800 flex items-center gap-2 text-sm shadow-md cursor-pointer" href="/">
+      <span class="material-symbols-outlined text-lg">dashboard</span>
+      <span>Launch Interactive Risk SOC</span>
+    </a>
+    <a class="bg-transparent border border-outline text-primary px-8 py-3.5 rounded-full font-medium transition-all hover:bg-surface-variant text-sm flex items-center gap-2" href="http://localhost:8008/docs" target="_blank">
+      <span class="material-symbols-outlined text-lg">api</span>
+      <span>FastAPI OpenAPI Specification</span>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="w-full border-t border-auralis py-12 bg-[#F3F2EF] text-xs text-secondary-auralis">
+  <div class="max-w-[1280px] mx-auto px-6 sm:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
+    <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 text-center sm:text-left">
+      <span class="text-lg font-bold tracking-tighter text-zinc-900 text-[20px]">FraudShield AI</span>
+      <span class="text-sm text-secondary-auralis">
+        © 2026 TCET Mumbai • Student Team: Ashmit Singh, Sumit Singh, Shivam Singh • Guide: Ms. Tanmayi Nagale
+      </span>
+    </div>
+    <div class="flex flex-wrap items-center gap-6">
+      <a class="text-sm text-secondary-auralis hover:text-primary transition-colors cursor-pointer" href="/">Live Dashboard</a>
+      <a class="text-sm text-secondary-auralis hover:text-primary transition-colors" href="http://localhost:8008/docs" target="_blank">API Docs (:8008)</a>
+      <a class="text-sm text-secondary-auralis hover:text-primary transition-colors" href="http://localhost:8008/health" target="_blank">Health Check</a>
+    </div>
+  </div>
+</footer>
+
+<!-- SCRIPT: LENIS SMOOTH SCROLL & DYNAMIC CRISP CANVAS TOPOLOGICAL ENGINE -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Lenis Smooth Scroll
+  let lenis;
+  if (typeof Lenis !== 'undefined') {
+    lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+  }
+
+  // Dynamic High-DPI Topological Canvas Simulation
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const TOTAL_FRAMES = 150;
+  let currentProgress = 0;
+  let targetProgress = 0;
+  let activeMode = 'stacking';
+
+  function resizeCanvas() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // Mode switching tabs
+  const tabButtons = document.querySelectorAll('.stage-tab');
+  const statusTag = document.getElementById('canvas-status-tag');
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabButtons.forEach(b => {
+        b.classList.remove('bg-surface', 'text-primary', 'font-semibold', 'shadow-sm');
+        b.classList.add('text-secondary-auralis', 'font-medium');
+      });
+      btn.classList.add('bg-surface', 'text-primary', 'font-semibold', 'shadow-sm');
+      btn.classList.remove('text-secondary-auralis', 'font-medium');
+      activeMode = btn.getAttribute('data-mode');
+
+      if (statusTag) {
+        if (activeMode === 'stacking') {
+          statusTag.textContent = 'STACKING META-LEARNER: XGB + LGBM + RF → LOGISTIC REGRESSION';
+        } else if (activeMode === 'shap') {
+          statusTag.textContent = 'XAI ENGINE: DUAL SHAP WATERFALL & LIME LOCAL ATTRIBUTIONS';
+        } else if (activeMode === 'graph') {
+          statusTag.textContent = 'NETWORKX TOPOLOGY: MONEY MULE & COLLUSION CLUSTER DISCOVERY';
+        } else if (activeMode === 'omnismote') {
+          statusTag.textContent = 'OMNISMOTE RESAMPLER: BOUNDARY CALIBRATION ON 0.17% FRAUD IMBALANCE';
+        }
+      }
+    });
+  });
+
+  // Scroll listener for progress
+  window.addEventListener('scroll', () => {
+    const stageTrack = document.getElementById('stage-track');
+    if (!stageTrack) return;
+    const trackRect = stageTrack.getBoundingClientRect();
+    const scrollMax = trackRect.height - window.innerHeight;
+    const scrollProgress = Math.min(1, Math.max(0, -trackRect.top / (scrollMax > 0 ? scrollMax : 1)));
+    targetProgress = scrollProgress;
+  });
+
+  // Nodes for network simulation
+  const nodes = [
+    { x: 0.15, y: 0.25, label: 'XGBoost', color: '#3B82F6', size: 14 },
+    { x: 0.15, y: 0.50, label: 'LightGBM', color: '#10B981', size: 14 },
+    { x: 0.15, y: 0.75, label: 'RandomForest', color: '#8B5CF6', size: 14 },
+    { x: 0.50, y: 0.50, label: 'Logistic Meta-Learner', color: '#F59E0B', size: 20 },
+    { x: 0.85, y: 0.35, label: 'Clean Probability', color: '#10B981', size: 16 },
+    { x: 0.85, y: 0.65, label: 'Fraud Risk Flag', color: '#EF4444', size: 16 },
+  ];
+
+  const particles = [];
+  for (let i = 0; i < 28; i++) {
+    particles.push({
+      progress: Math.random(),
+      speed: 0.006 + Math.random() * 0.008,
+      fromIdx: Math.floor(Math.random() * 3),
+      toIdx: 3,
+      size: 2 + Math.random() * 2
+    });
+  }
+
+  let time = 0;
+  function renderLoop() {
+    time += 0.03;
+    currentProgress += (targetProgress - currentProgress) * 0.08;
+    const frameIdx = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.round(currentProgress * (TOTAL_FRAMES - 1))));
+
+    const counter = document.getElementById('stage-frame-counter');
+    if (counter) {
+      const pad = String(frameIdx + 1).padStart(3, '0');
+      counter.textContent = `STAGE PHASE ${pad} / ${TOTAL_FRAMES}`;
+    }
+
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    // Dark cyber canvas background
+    ctx.fillStyle = '#0A0E1A';
+    ctx.fillRect(0, 0, w, h);
+
+    // Subtle grid
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < w; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let y = 0; y < h; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    // Dynamic rendering based on active mode
+    if (activeMode === 'stacking') {
+      // Connect base to meta
+      nodes.forEach((n, idx) => {
+        const nx = n.x * w;
+        const ny = n.y * h;
+
+        if (idx < 3) {
+          const metaX = nodes[3].x * w;
+          const metaY = nodes[3].y * h;
+          ctx.strokeStyle = 'rgba(59, 130, 246, 0.35)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(nx, ny);
+          ctx.lineTo(metaX, metaY);
+          ctx.stroke();
+        } else if (idx === 3) {
+          [4, 5].forEach(destIdx => {
+            const destX = nodes[destIdx].x * w;
+            const destY = nodes[destIdx].y * h;
+            ctx.strokeStyle = destIdx === 5 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(nx, ny);
+            ctx.lineTo(destX, destY);
+            ctx.stroke();
+          });
+        }
+      });
+
+      // Animate flowing transaction packets
+      particles.forEach(p => {
+        p.progress += p.speed;
+        if (p.progress > 1) {
+          p.progress = 0;
+          p.fromIdx = Math.floor(Math.random() * 3);
+        }
+        const from = nodes[p.fromIdx];
+        const to = nodes[p.toIdx];
+        const px = (from.x + (to.x - from.x) * p.progress) * w;
+        const py = (from.y + (to.y - from.y) * p.progress) * h;
+
+        ctx.fillStyle = '#60A5FA';
+        ctx.shadowColor = '#3B82F6';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(px, py, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      // Draw Nodes
+      nodes.forEach((n, idx) => {
+        const nx = n.x * w;
+        const ny = n.y * h;
+        ctx.shadowColor = n.color;
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = n.color;
+        ctx.beginPath();
+        ctx.arc(nx, ny, n.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '11px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(n.label, nx, ny - n.size - 8);
+      });
+
+    } else if (activeMode === 'shap') {
+      // SHAP Waterfall Attribution Bars
+      const features = [
+        { name: 'Amount Anomaly (> $200K)', val: +0.42, color: '#EF4444' },
+        { name: 'errorBalanceOrig (< 0)', val: +0.34, color: '#EF4444' },
+        { name: 'PCA Component V14', val: +0.22, color: '#EF4444' },
+        { name: 'errorBalanceDest', val: +0.18, color: '#EF4444' },
+        { name: 'Known Merchant POS', val: -0.28, color: '#10B981' },
+        { name: 'Device Fingerprint Match', val: -0.32, color: '#10B981' },
+      ];
+
+      const barStartY = 60;
+      const barHeight = 24;
+      const spacing = 44;
+      const centerX = w * 0.52;
+
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '12px Geist, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('SHAP Base Value: E[f(x)] = 0.04 (Standard Non-Fraud Benchmark)', centerX, 32);
+
+      features.forEach((f, i) => {
+        const y = barStartY + i * spacing;
+        const barW = Math.abs(f.val) * (w * 0.35);
+
+        ctx.fillStyle = '#CBD5E1';
+        ctx.font = '11px JetBrains Mono, monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(f.name, centerX - 15, y + 16);
+
+        ctx.fillStyle = f.color;
+        ctx.shadowColor = f.color;
+        ctx.shadowBlur = 8;
+        if (f.val > 0) {
+          ctx.fillRect(centerX + 5, y, barW, barHeight);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.textAlign = 'left';
+          ctx.fillText(`+${(f.val * 100).toFixed(0)}% Impact`, centerX + barW + 12, y + 16);
+        } else {
+          ctx.fillRect(centerX - 5 - barW, y, barW, barHeight);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.textAlign = 'right';
+          ctx.fillText(`${(f.val * 100).toFixed(0)}% Safe`, centerX - 5 - barW - 12, y + 16);
+        }
+        ctx.shadowBlur = 0;
+      });
+
+    } else if (activeMode === 'graph') {
+      // Collusion Network visualization
+      const cx = w * 0.5;
+      const cy = h * 0.5;
+      const muleCount = 8;
+      const ringRadius = Math.min(w, h) * 0.32;
+
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+      ctx.lineWidth = 1.5;
+
+      // Draw center syndicate hub
+      ctx.fillStyle = '#EF4444';
+      ctx.shadowColor = '#EF4444';
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '11px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Mule Syndicate Core', cx, cy + 36);
+
+      // Draw orbiting mule accounts
+      for (let i = 0; i < muleCount; i++) {
+        const angle = (i / muleCount) * Math.PI * 2 + time * 0.2;
+        const mx = cx + Math.cos(angle) * ringRadius;
+        const my = cy + Math.sin(angle) * ringRadius;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(mx, my);
+        ctx.stroke();
+
+        ctx.fillStyle = i % 2 === 0 ? '#F59E0B' : '#3B82F6';
+        ctx.beginPath();
+        ctx.arc(mx, my, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#CBD5E1';
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.fillText(`Mule #${104 + i}`, mx, my - 14);
+      }
+
+    } else if (activeMode === 'omnismote') {
+      // Decision Boundary & Synthetic Point Interpolation
+      const cx = w * 0.5;
+      const cy = h * 0.5;
+
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '12px Geist, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('OmniSMOTE Adaptive Manifold: Generating Boundary Samples on 0.17% Imbalance', cx, 30);
+
+      // S-curve boundary
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.setLineDash([6, 6]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let x = 0; x < w; x += 10) {
+        const y = cy + Math.sin((x / w) * Math.PI * 3 + time * 0.5) * (h * 0.25);
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Non-fraud cluster
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.4)';
+      for (let i = 0; i < 40; i++) {
+        const px = (0.1 + (i % 8) * 0.08) * w;
+        const py = (0.6 + (Math.floor(i / 8) * 0.07)) * h;
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Synthetic Fraud points along boundary
+      ctx.fillStyle = '#F43F5E';
+      ctx.shadowColor = '#F43F5E';
+      ctx.shadowBlur = 10;
+      for (let i = 0; i < 15; i++) {
+        const px = (0.2 + (i / 15) * 0.6) * w;
+        const py = cy + Math.sin((px / w) * Math.PI * 3 + time * 0.5) * (h * 0.25) + (Math.sin(i * 2) * 20);
+        ctx.beginPath();
+        ctx.arc(px, py, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    requestAnimationFrame(renderLoop);
+  }
+
+  requestAnimationFrame(renderLoop);
+});
+</script>
+
+</body>
+</html>

@@ -6,15 +6,24 @@ services:
     dockerfilePath: ./backend/Dockerfile
     region: oregon
     plan: free
+    healthCheckPath: /health
     envVars:
       - key: PORT
         value: 8008
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: JWT_SECRET_KEY
+        generateValue: true
 
   - type: web
     name: fraudshield-frontend
     env: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        # Set this to the public URL of your fraudshield-backend web service
+        value: https://fraudshield-backend.onrender.com
     routes:
       - type: rewrite
         source: /*
