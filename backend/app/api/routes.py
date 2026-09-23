@@ -104,14 +104,32 @@ async def analyze_transaction(
     except Exception:
         raw_prob = 0.50
 
+    # 2b. Calibrate raw_prob using the domain-specific optimal threshold.
+    # The optimal_threshold was computed during training via precision-recall
+    # curve maximization. We map it to a calibrated probability so the
+    # composite risk engine receives a consistent [0, 1] signal regardless
+    # of the model's native probability scale.
+    #
+    # Calibration formula: if raw_prob >= threshold → prob_calibrated = 0.5 + 0.5*(raw_prob-threshold)/(1-threshold)
+    #                      if raw_prob <  threshold → prob_calibrated = 0.5 * raw_prob / threshold
+    # This re-anchors the threshold to 0.5, preserving relative ordering.
+    optimal_threshold = meta.get('optimal_threshold', 0.50) if meta else 0.50
+    optimal_threshold = max(0.01, min(0.99, optimal_threshold))  # guard
+
+    if raw_prob >= optimal_threshold:
+        ml_prob_calibrated = 0.50 + 0.50 * (raw_prob - optimal_threshold) / (1.0 - optimal_threshold)
+    else:
+        ml_prob_calibrated = 0.50 * raw_prob / optimal_threshold
+    ml_prob_calibrated = round(max(0.01, min(0.99, ml_prob_calibrated)), 4)
+
     sender = str(payload_dict.get("nameOrig", "C_ANON_SRC"))
     receiver = str(payload_dict.get("nameDest", "M_ANON_DST"))
     device = str(payload_dict.get("device_id") or payload_dict.get("device") or f"DEV_{abs(hash(sender)) % 1000}")
     ip = str(payload_dict.get("ip_address") or payload_dict.get("ip") or f"192.168.1.{abs(hash(sender)) % 254}")
 
-    # 3. Execute Adaptive Multi-Signal Risk Engine
+    # 3. Execute Adaptive Multi-Signal Risk Engine (using calibrated ML probability)
     risk_output = risk_engine.compute_composite_risk(
-        ml_prob=raw_prob,
+        ml_prob=ml_prob_calibrated,
         txn_dict=payload_dict,
         sender=sender,
         receiver=receiver,
@@ -149,6 +167,8 @@ async def analyze_transaction(
     return {
         "domain": selected_domain,
         "raw_prob": round(raw_prob, 4),
+        "ml_prob_calibrated": round(ml_prob_calibrated, 4),
+        "optimal_threshold_used": round(optimal_threshold, 4),
         "risk_score": risk_output["composite_risk_score"],
         "decision": risk_output["decision"],
         "status": risk_output["status"],
@@ -229,10 +249,15 @@ def get_customer_profile(customer_id: str):
 @router.get("/health")
 def health_check():
     import app.core.model_engine as engine
+    thresholds = {
+        domain: meta.get('optimal_threshold', 'N/A')
+        for domain, meta in engine.domain_metadata.items()
+    }
     return {
         "status": "online",
         "model_loaded": len(engine.domain_models) > 0,
         "domains_loaded": list(engine.domain_models.keys()),
+        "optimal_thresholds": thresholds,
         "graph_nodes_loaded": graph_engine.graph.number_of_nodes(),
         "graph_edges_loaded": graph_engine.graph.number_of_edges(),
         "drift_monitor_samples": len(drift_monitor.current_window)
