@@ -63,9 +63,17 @@ const getNextLiveTransaction = async (targetFraudRate = 0.015) => {
   }
 };
 
+const SPEED_PRESETS = [
+  { label: '0.5×', value: 3000, desc: 'Slow (3.0s per tx)' },
+  { label: '1×', value: 1500, desc: 'Normal (1.5s per tx)' },
+  { label: '2×', value: 750, desc: 'Fast (0.75s per tx)' },
+  { label: '5×', value: 300, desc: 'Turbo Burst (0.3s per tx)' }
+];
+
 export const LiveMonitoringModule = () => {
   const [transactions, setTransactions] = useState([]);
   const [isPaused, setIsPaused] = useState(false);
+  const [streamSpeed, setStreamSpeed] = useState(1500);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   
   const [metrics, setMetrics] = useState({
@@ -203,39 +211,48 @@ export const LiveMonitoringModule = () => {
   useEffect(() => {
     if (isPaused) return;
 
+    let isProcessing = false;
     const interval = setInterval(async () => {
-      // Stream transaction with realistic production class imbalance (1.5% fraud rate)
-      const txPayload = await getNextLiveTransaction(0.015);
-      const res = await analyzeTransaction(txPayload);
-      
-      const decisionStr = res.decision || (res.risk_score > 0.65 ? 'Fraud' : res.risk_score >= 0.35 ? 'Needs Review' : 'Safe');
-      const id = `tx-ps-${Math.floor(1000 + Math.random() * 9000)}`;
+      if (isProcessing) return;
+      isProcessing = true;
+      try {
+        // Stream transaction with realistic production class imbalance (1.5% fraud rate)
+        const txPayload = await getNextLiveTransaction(0.015);
+        const res = await analyzeTransaction(txPayload);
+        
+        const decisionStr = res.decision || (res.risk_score > 0.65 ? 'Fraud' : res.risk_score >= 0.35 ? 'Needs Review' : 'Safe');
+        const id = `tx-ps-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      const riskScorePct = (res.risk_score * 100).toFixed(1);
+        const riskScorePct = (res.risk_score * 100).toFixed(1);
 
-      const newTx = {
-        id,
-        time: new Date().toTimeString().split(' ')[0],
-        ...txPayload,
-        risk: riskScorePct,
-        riskScore: res.risk_score,
-        decision: decisionStr,
-        status: decisionStr === 'Fraud' ? 'FRAUD' : decisionStr === 'Needs Review' ? 'NEEDS REVIEW' : 'SAFE',
-        shapAttributions: computeDetailedShap(txPayload, res),
-        shapTags: computeInlineShap(txPayload, res)
-      };
+        const newTx = {
+          id,
+          time: new Date().toTimeString().split(' ')[0],
+          ...txPayload,
+          risk: riskScorePct,
+          riskScore: res.risk_score,
+          decision: decisionStr,
+          status: decisionStr === 'Fraud' ? 'FRAUD' : decisionStr === 'Needs Review' ? 'NEEDS REVIEW' : 'SAFE',
+          shapAttributions: computeDetailedShap(txPayload, res),
+          shapTags: computeInlineShap(txPayload, res)
+        };
 
-      setTransactions(prev => [newTx, ...prev.slice(0, 9)]);
-      setMetrics(prev => ({
-        totalProcessed: prev.totalProcessed + 1,
-        totalFraud: prev.totalFraud + (decisionStr === 'Fraud' ? 1 : 0),
-        totalReview: prev.totalReview + (decisionStr === 'Needs Review' ? 1 : 0),
-        totalVolume: prev.totalVolume + (txPayload.amount || 0)
-      }));
-    }, 3500);
+        setTransactions(prev => [newTx, ...prev.slice(0, 9)]);
+        setMetrics(prev => ({
+          totalProcessed: prev.totalProcessed + 1,
+          totalFraud: prev.totalFraud + (decisionStr === 'Fraud' ? 1 : 0),
+          totalReview: prev.totalReview + (decisionStr === 'Needs Review' ? 1 : 0),
+          totalVolume: prev.totalVolume + (txPayload.amount || 0)
+        }));
+      } catch (err) {
+        console.warn("Live stream tick evaluation error:", err);
+      } finally {
+        isProcessing = false;
+      }
+    }, streamSpeed);
 
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, streamSpeed]);
 
   const selRisk = selectedTransaction?.riskScore ?? 0.05;
   const selDecision = selectedTransaction?.decision || (selRisk > 0.65 ? 'Fraud' : selRisk >= 0.35 ? 'Needs Review' : 'Safe');
@@ -312,17 +329,48 @@ export const LiveMonitoringModule = () => {
                 <p className="text-[11px] text-zinc-400">Inline TreeSHAP Attribution Vector Scoring</p>
               </div>
 
-              <button
-                onClick={() => setIsPaused(!isPaused)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold transition-all cursor-pointer border ${
-                  isPaused
-                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : 'bg-black/[0.04] text-zinc-800 border-black/[0.06] hover:bg-black/[0.08]'
-                }`}
-              >
-                {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
-                <span>{isPaused ? 'RESUME' : 'PAUSE'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Speed Multiplier Segmented Toggle */}
+                <div className="flex items-center bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] text-xs font-mono">
+                  <span className="text-[10px] text-zinc-500 px-2 font-medium flex items-center gap-1 shrink-0">
+                    <Zap className="w-3 h-3 text-amber-500" />
+                    <span className="hidden sm:inline">Speed:</span>
+                  </span>
+                  <div className="flex items-center gap-0.5">
+                    {SPEED_PRESETS.map((preset) => {
+                      const isActive = streamSpeed === preset.value;
+                      return (
+                        <button
+                          key={preset.label}
+                          onClick={() => setStreamSpeed(preset.value)}
+                          className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-white text-blue-600 shadow-xs border border-black/[0.08]'
+                              : 'text-zinc-500 hover:text-zinc-900 hover:bg-black/[0.02]'
+                          }`}
+                          title={preset.desc}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Pause / Resume Button */}
+                <button
+                  onClick={() => setIsPaused(!isPaused)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer border ${
+                    isPaused
+                      ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-xs'
+                      : 'bg-black/[0.04] text-zinc-800 border-black/[0.06] hover:bg-black/[0.08]'
+                  }`}
+                  title={isPaused ? "Resume live stream" : "Pause live stream"}
+                >
+                  {isPaused ? <Play className="w-3.5 h-3.5 fill-current" /> : <Pause className="w-3.5 h-3.5" />}
+                  <span>{isPaused ? 'RESUME' : 'PAUSE'}</span>
+                </button>
+              </div>
             </div>
 
             {/* Stream Rows List */}
