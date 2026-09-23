@@ -82,13 +82,22 @@ export const DATASET_METADATA = {
   }
 };
 
-const PAYSIM_SAMPLES = [
-  { step: 1, type: 'CASH_OUT', amount: 46853.57, nameOrig: 'C1388419439', oldbalanceOrg: 50000.0, newbalanceOrig: 3146.43, nameDest: 'C693256215', oldbalanceDest: 0.0, newbalanceDest: 46853.57, isFraud: 0 },
+export const PAYSIM_LEGIT_SAMPLES = [
+  { step: 1, type: 'PAYMENT', amount: 98.50, nameOrig: 'C1231006815', oldbalanceOrg: 1700.0, newbalanceOrig: 1601.50, nameDest: 'M1979787155', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
+  { step: 2, type: 'PAYMENT', amount: 32.10, nameOrig: 'C1028433774', oldbalanceOrg: 12000.0, newbalanceOrig: 11967.90, nameDest: 'M2007079779', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
+  { step: 3, type: 'CASH_IN', amount: 1500.0, nameOrig: 'C1566137702', oldbalanceOrg: 2500.0, newbalanceOrig: 4000.0, nameDest: 'C974983454', oldbalanceDest: 45000.0, newbalanceDest: 43500.0, isFraud: 0 },
+  { step: 4, type: 'DEBIT', amount: 45.00, nameOrig: 'C2033524523', oldbalanceOrg: 4500.0, newbalanceOrig: 4455.0, nameDest: 'C38997010', oldbalanceDest: 1200.0, newbalanceDest: 1245.0, isFraud: 0 },
+  { step: 5, type: 'TRANSFER', amount: 280.0, nameOrig: 'C1666544295', oldbalanceOrg: 1200.0, newbalanceOrig: 920.0, nameDest: 'C1823043282', oldbalanceDest: 500.0, newbalanceDest: 780.0, isFraud: 0 },
+  { step: 6, type: 'PAYMENT', amount: 14.80, nameOrig: 'C1305486145', oldbalanceOrg: 560.0, newbalanceOrig: 545.20, nameDest: 'M4948455', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 }
+];
+
+export const PAYSIM_FRAUD_SAMPLES = [
   { step: 1, type: 'TRANSFER', amount: 160537.86, nameOrig: 'C1300802870', oldbalanceOrg: 160537.86, newbalanceOrig: 0.0, nameDest: 'C1538398422', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 1 },
-  { step: 2, type: 'PAYMENT', amount: 9839.64, nameOrig: 'C1231006815', oldbalanceOrg: 170136.0, newbalanceOrig: 160296.36, nameDest: 'M1979787155', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
   { step: 3, type: 'CASH_OUT', amount: 246853.57, nameOrig: 'C1141347701', oldbalanceOrg: 246853.57, newbalanceOrig: 0.0, nameDest: 'C1565118802', oldbalanceDest: 474823.39, newbalanceDest: 721676.96, isFraud: 1 },
   { step: 4, type: 'TRANSFER', amount: 522334.78, nameOrig: 'C2033524523', oldbalanceOrg: 522334.78, newbalanceOrig: 0.0, nameDest: 'C38997010', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 1 }
 ];
+
+export const PAYSIM_SAMPLES = [...PAYSIM_LEGIT_SAMPLES, ...PAYSIM_FRAUD_SAMPLES];
 
 export async function checkBackendHealth() {
   try {
@@ -102,18 +111,21 @@ export async function checkBackendHealth() {
   return { status: 'offline', model_loaded: false };
 }
 
-export async function fetchRandomTransaction() {
+export async function fetchRandomTransaction(fraudRate = 0.015) {
   try {
-    const res = await fetch(`${API_BASE_URL}/transaction/random`, { method: 'GET' });
+    const res = await fetch(`${API_BASE_URL}/transaction/random?fraud_rate=${fraudRate}`, { method: 'GET' });
     if (res.ok) {
       return await res.json();
     }
   } catch (err) {
-    console.warn('Backend API un-reachable for random transaction, selecting sample PaySim CSV record.');
+    console.warn('Backend API unreachable for random transaction, selecting sample PaySim record with class imbalance.');
   }
   
-  const randomIndex = Math.floor(Math.random() * PAYSIM_SAMPLES.length);
-  return PAYSIM_SAMPLES[randomIndex];
+  // Real-world imbalanced client fallback
+  const isFraud = Math.random() < fraudRate;
+  const pool = isFraud ? PAYSIM_FRAUD_SAMPLES : PAYSIM_LEGIT_SAMPLES;
+  const randomIndex = Math.floor(Math.random() * pool.length);
+  return pool[randomIndex];
 }
 
 function calculateCalibratedRisk(p, transactionDict) {
@@ -150,6 +162,7 @@ function calculateCalibratedRisk(p, transactionDict) {
     }
   }
 }
+
 
 export async function analyzeTransaction(transaction, domain = 'paysim') {
   try {

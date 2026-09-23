@@ -65,7 +65,7 @@ def load_data():
     fraud_df = df[df['isFraud'] == 1]
     legit_df = df[df['isFraud'] == 0]
 
-def get_random_transaction():
+def get_random_transaction(fraud_rate: float = 0.015):
     global fraud_df, legit_df
     if fraud_df is None or legit_df is None:
         load_data()
@@ -73,8 +73,9 @@ def get_random_transaction():
     if fraud_df is None or legit_df is None or (fraud_df.empty and legit_df.empty):
         return None
         
-    # 80% chance of legit transaction, 20% chance of fraud for demo purposes
-    if not fraud_df.empty and random.random() < 0.2:
+    # Reflect real-world severe class imbalance: 98.5% legit, 1.5% fraud
+    target_fraud_rate = max(0.0, min(1.0, fraud_rate if fraud_rate is not None else 0.015))
+    if not fraud_df.empty and random.random() < target_fraud_rate:
         return fraud_df.sample(1).iloc[0]
     elif not legit_df.empty:
         return legit_df.sample(1).iloc[0]

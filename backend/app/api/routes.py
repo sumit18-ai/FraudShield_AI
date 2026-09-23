@@ -275,8 +275,8 @@ def health_check():
     }
 
 @router.get("/transaction/random")
-def get_random_transaction_endpoint():
-    txn = data_loader.get_random_transaction()
+def get_random_transaction_endpoint(fraud_rate: Optional[float] = Query(0.015, ge=0.0, le=1.0)):
+    txn = data_loader.get_random_transaction(fraud_rate=fraud_rate)
     if txn is None:
         raise HTTPException(status_code=500, detail="Data not loaded.")
 

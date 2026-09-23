@@ -5,18 +5,63 @@ import {
   Sparkles, ArrowUpRight, ArrowDownRight, Eye, ShieldCheck, 
   BarChart2, Info, Layers, RefreshCw, AlertTriangle 
 } from 'lucide-react';
-import { analyzeTransaction } from '../lib/api';
+import { analyzeTransaction, fetchRandomTransaction } from '../lib/api';
 
-const PAYSIM_LIVE_POOL = [
-  { step: 384, type: 'CASH_OUT', amount: 46853.57, nameOrig: 'C1141347701', oldbalanceOrg: 50000.0, newbalanceOrig: 3146.43, nameDest: 'C1565118802', oldbalanceDest: 474823.39, newbalanceDest: 521676.96, isFraud: 0 },
-  { step: 301, type: 'TRANSFER', amount: 160537.86, nameOrig: 'C1500116410', oldbalanceOrg: 160537.86, newbalanceOrig: 0.0, nameDest: 'C2075255678', oldbalanceDest: 13551586.42, newbalanceDest: 13712124.28, isFraud: 1 },
-  { step: 210, type: 'CASH_IN', amount: 108665.75, nameOrig: 'C1566137702', oldbalanceOrg: 7731403.68, newbalanceOrig: 7840069.43, nameDest: 'C974983454', oldbalanceDest: 227317.12, newbalanceDest: 118651.37, isFraud: 0 },
-  { step: 1, type: 'TRANSFER', amount: 181.0, nameOrig: 'C1300802870', oldbalanceOrg: 181.0, newbalanceOrig: 0.0, nameDest: 'C1538398422', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 1 },
-  { step: 230, type: 'PAYMENT', amount: 23975.99, nameOrig: 'C1088924630', oldbalanceOrg: 45000.0, newbalanceOrig: 21024.01, nameDest: 'M709715506', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
-  { step: 43, type: 'PAYMENT', amount: 3283.90, nameOrig: 'C1028433774', oldbalanceOrg: 12000.0, newbalanceOrig: 8716.10, nameDest: 'M2007079779', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
-  { step: 379, type: 'CASH_OUT', amount: 152138.78, nameOrig: 'C523442658', oldbalanceOrg: 152138.78, newbalanceOrig: 0.0, nameDest: 'C391770830', oldbalanceDest: 1046642.5, newbalanceDest: 1198781.28, isFraud: 1 },
-  { step: 4, type: 'DEBIT', amount: 4233.12, nameOrig: 'C2033524523', oldbalanceOrg: 8900.00, newbalanceOrig: 4666.88, nameDest: 'C38997010', oldbalanceDest: 1200.0, newbalanceDest: 5433.12, isFraud: 0 }
+// Realistic, highly imbalanced PaySim transaction pools
+// PaySim benchmark baseline: ~99.87% legitimate, ~0.13% fraud
+// Live production telemetry profile: ~98.5% clean traffic, ~1.5% fraud
+const PAYSIM_LEGIT_POOL = [
+  { step: 10, type: 'PAYMENT', amount: 84.50, nameOrig: 'C1088924630', oldbalanceOrg: 3500.0, newbalanceOrig: 3415.50, nameDest: 'M709715506', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
+  { step: 15, type: 'PAYMENT', amount: 32.10, nameOrig: 'C1028433774', oldbalanceOrg: 12000.0, newbalanceOrig: 11967.90, nameDest: 'M2007079779', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
+  { step: 22, type: 'CASH_IN', amount: 1500.0, nameOrig: 'C1566137702', oldbalanceOrg: 2500.0, newbalanceOrig: 4000.0, nameDest: 'C974983454', oldbalanceDest: 45000.0, newbalanceDest: 43500.0, isFraud: 0 },
+  { step: 35, type: 'PAYMENT', amount: 245.99, nameOrig: 'C1231006815', oldbalanceOrg: 8900.0, newbalanceOrig: 8654.01, nameDest: 'M1979787155', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
+  { step: 44, type: 'DEBIT', amount: 120.00, nameOrig: 'C2033524523', oldbalanceOrg: 4500.0, newbalanceOrig: 4380.0, nameDest: 'C38997010', oldbalanceDest: 1200.0, newbalanceDest: 1320.0, isFraud: 0 },
+  { step: 51, type: 'PAYMENT', amount: 18.50, nameOrig: 'C1305486145', oldbalanceOrg: 560.0, newbalanceOrig: 541.50, nameDest: 'M4948455', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
+  { step: 63, type: 'TRANSFER', amount: 350.0, nameOrig: 'C1666544295', oldbalanceOrg: 1200.0, newbalanceOrig: 850.0, nameDest: 'C1823043282', oldbalanceDest: 500.0, newbalanceDest: 850.0, isFraud: 0 },
+  { step: 72, type: 'CASH_OUT', amount: 200.0, nameOrig: 'C1141347701', oldbalanceOrg: 1500.0, newbalanceOrig: 1300.0, nameDest: 'C1565118802', oldbalanceDest: 8000.0, newbalanceDest: 8200.0, isFraud: 0 },
+  { step: 88, type: 'PAYMENT', amount: 76.25, nameOrig: 'C1928374650', oldbalanceOrg: 4200.0, newbalanceOrig: 4123.75, nameDest: 'M3489346', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
+  { step: 95, type: 'DEBIT', amount: 65.00, nameOrig: 'C1847291048', oldbalanceOrg: 3200.0, newbalanceOrig: 3135.0, nameDest: 'C82739104', oldbalanceDest: 5000.0, newbalanceDest: 5065.0, isFraud: 0 },
+  { step: 104, type: 'PAYMENT', amount: 142.80, nameOrig: 'C1726354891', oldbalanceOrg: 6500.0, newbalanceOrig: 6357.20, nameDest: 'M987654321', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 0 },
+  { step: 118, type: 'CASH_IN', amount: 3200.0, nameOrig: 'C1635241890', oldbalanceOrg: 1100.0, newbalanceOrig: 4300.0, nameDest: 'C192837465', oldbalanceDest: 60000.0, newbalanceDest: 56800.0, isFraud: 0 }
 ];
+
+const PAYSIM_SUSPICIOUS_POOL = [
+  { step: 301, type: 'TRANSFER', amount: 160537.86, nameOrig: 'C1500116410', oldbalanceOrg: 160537.86, newbalanceOrig: 0.0, nameDest: 'C2075255678', oldbalanceDest: 13551586.42, newbalanceDest: 13712124.28, isFraud: 1 },
+  { step: 379, type: 'CASH_OUT', amount: 285000.00, nameOrig: 'C523442658', oldbalanceOrg: 285000.00, newbalanceOrig: 0.0, nameDest: 'C391770830', oldbalanceDest: 1046642.5, newbalanceDest: 1331642.50, isFraud: 1 },
+  { step: 142, type: 'TRANSFER', amount: 450000.00, nameOrig: 'C90101', oldbalanceOrg: 450000.00, newbalanceOrig: 0.0, nameDest: 'C90102', oldbalanceDest: 0.0, newbalanceDest: 0.0, isFraud: 1 }
+];
+
+const getNextLiveTransaction = async (targetFraudRate = 0.015) => {
+  // 1. Prioritize real backend database stream with target fraud rate
+  try {
+    const backendTx = await fetchRandomTransaction(targetFraudRate);
+    if (backendTx && backendTx.amount !== undefined) {
+      return backendTx;
+    }
+  } catch (err) {
+    // Graceful fallback to client pool
+  }
+
+  // 2. Realistic imbalanced client-side sampling (98.5% legit, 1.5% fraud)
+  const isSuspicious = Math.random() < targetFraudRate;
+  if (isSuspicious && PAYSIM_SUSPICIOUS_POOL.length > 0) {
+    const raw = PAYSIM_SUSPICIOUS_POOL[Math.floor(Math.random() * PAYSIM_SUSPICIOUS_POOL.length)];
+    return { ...raw };
+  } else {
+    const raw = PAYSIM_LEGIT_POOL[Math.floor(Math.random() * PAYSIM_LEGIT_POOL.length)];
+    const jitter = Math.round((Math.random() * 20 - 10) * 100) / 100;
+    const amount = Math.max(8.50, Math.round((raw.amount + jitter) * 100) / 100);
+    const oldbalanceOrg = raw.oldbalanceOrg;
+    const newbalanceOrig = Math.max(0, Math.round((oldbalanceOrg - amount) * 100) / 100);
+    return {
+      ...raw,
+      amount,
+      oldbalanceOrg,
+      newbalanceOrig,
+      isFraud: 0
+    };
+  }
+};
 
 export const LiveMonitoringModule = () => {
   const [transactions, setTransactions] = useState([]);
@@ -110,8 +155,9 @@ export const LiveMonitoringModule = () => {
       let reviewCount = 0;
       let volume = 0;
 
+      // Realistic initial baseline: 6 legitimate normal payments
       for (let i = 0; i < 6; i++) {
-        const item = PAYSIM_LIVE_POOL[i % PAYSIM_LIVE_POOL.length];
+        const item = PAYSIM_LEGIT_POOL[i % PAYSIM_LEGIT_POOL.length];
         const res = await analyzeTransaction(item);
         
         const decisionStr = res.decision || (res.risk_score > 0.65 ? 'Fraud' : res.risk_score >= 0.35 ? 'Needs Review' : 'Safe');
@@ -125,7 +171,7 @@ export const LiveMonitoringModule = () => {
 
         const txObj = {
           id,
-          time: new Date(Date.now() - i * 3000).toTimeString().split(' ')[0],
+          time: new Date(Date.now() - (6 - i) * 3500).toTimeString().split(' ')[0],
           ...item,
           risk: riskScorePct,
           riskScore: res.risk_score,
@@ -135,7 +181,7 @@ export const LiveMonitoringModule = () => {
           shapTags: computeInlineShap(item, res)
         };
 
-        initialList.push(txObj);
+        initialList.unshift(txObj);
       }
 
       setTransactions(initialList);
@@ -158,10 +204,8 @@ export const LiveMonitoringModule = () => {
     if (isPaused) return;
 
     const interval = setInterval(async () => {
-      const raw = PAYSIM_LIVE_POOL[Math.floor(Math.random() * PAYSIM_LIVE_POOL.length)];
-      const tweakAmount = Math.round((raw.amount + (Math.random() * 80 - 40)) * 100) / 100;
-      const txPayload = { ...raw, amount: Math.max(tweakAmount, 10) };
-
+      // Stream transaction with realistic production class imbalance (1.5% fraud rate)
+      const txPayload = await getNextLiveTransaction(0.015);
       const res = await analyzeTransaction(txPayload);
       
       const decisionStr = res.decision || (res.risk_score > 0.65 ? 'Fraud' : res.risk_score >= 0.35 ? 'Needs Review' : 'Safe');
@@ -181,14 +225,14 @@ export const LiveMonitoringModule = () => {
         shapTags: computeInlineShap(txPayload, res)
       };
 
-      setTransactions(prev => [newTx, ...prev.slice(0, 8)]);
+      setTransactions(prev => [newTx, ...prev.slice(0, 9)]);
       setMetrics(prev => ({
         totalProcessed: prev.totalProcessed + 1,
         totalFraud: prev.totalFraud + (decisionStr === 'Fraud' ? 1 : 0),
         totalReview: prev.totalReview + (decisionStr === 'Needs Review' ? 1 : 0),
-        totalVolume: prev.totalVolume + txPayload.amount
+        totalVolume: prev.totalVolume + (txPayload.amount || 0)
       }));
-    }, 3000);
+    }, 3500);
 
     return () => clearInterval(interval);
   }, [isPaused]);
@@ -220,7 +264,9 @@ export const LiveMonitoringModule = () => {
           <div>
             <div className="text-[10px] font-mono text-zinc-400 font-semibold uppercase tracking-wider">Interceptions</div>
             <div className="text-2xl font-bold text-rose-600 font-mono tracking-tight">{metrics.totalFraud}</div>
-            <div className="text-[10px] text-rose-600 font-mono">Automated Block</div>
+            <div className="text-[10px] text-rose-600 font-mono">
+              {metrics.totalProcessed > 0 ? ((metrics.totalFraud / metrics.totalProcessed) * 100).toFixed(1) : '0.0'}% Incident Rate
+            </div>
           </div>
         </div>
 
@@ -259,6 +305,9 @@ export const LiveMonitoringModule = () => {
                 <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
                   <Activity className="w-4 h-4 text-blue-600" />
                   <span>Real-Time Payment Stream</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 font-medium">
+                    Imbalanced Telemetry (~1.5% Fraud Rate)
+                  </span>
                 </h3>
                 <p className="text-[11px] text-zinc-400">Inline TreeSHAP Attribution Vector Scoring</p>
               </div>
