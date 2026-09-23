@@ -25,8 +25,18 @@ var/
 .venv_win
 venv/
 
-# Environment
+# Environment & Secrets — NEVER commit .env files
 .env
+.env.*
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# Database files (SQLite)
+*.db
+*.db-wal
+*.db-shm
+db/
 
 # Jupyter
 .ipynb_checkpoints
@@ -51,4 +61,10 @@ yarn-error.log
 
 # OS
 .DS_Store
+__MACOSX/
 Thumbs.db
+
+# CI coverage reports
+coverage.xml
+.coverage
+htmlcov/

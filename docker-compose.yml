@@ -9,11 +9,16 @@ services:
       - "8008:8008"
     volumes:
       - ./data:/app/data
+      - fraudshield_db:/app/db
     environment:
       - ENV=production
       - PORT=8008
+      # Set a specific comma-separated list of allowed frontend origins
       - ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-      - JWT_SECRET_KEY=fraudshield-production-jwt-mesh-2025
+      # REQUIRED: set via .env file or shell export — never hardcode here
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    env_file:
+      - .env
 
   frontend:
     build:
@@ -27,3 +32,6 @@ services:
       - backend
     environment:
       - VITE_API_URL=http://localhost:8008
+
+volumes:
+  fraudshield_db:

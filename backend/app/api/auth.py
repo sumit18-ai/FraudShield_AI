@@ -1,37 +1,39 @@
-from fastapi import APIRouter, HTTPException, Depends, Request, status, Body
+from fastapi import APIRouter, HTTPException, Depends, Request, status
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List, Dict, Any
+import secrets
 from ..core.security import (
     USERS_DB, DEMO_PERSONAS, API_KEYS_DB, AUDIT_TRAIL,
     hash_password, verify_password, create_access_token,
     get_current_user, require_role, record_audit_event, get_client_ip,
-    check_rate_limit
+    check_rate_limit, lookup_api_key, store_api_key
 )
-import secrets
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Access Control"])
 
+
 class LoginRequest(BaseModel):
-    email: Optional[str] = None
+    email: Optional[EmailStr] = None
     password: Optional[str] = None
-    persona: Optional[str] = None # 'soc_analyst', 'compliance_officer', 'admin'
+    persona: Optional[str] = None  # 'soc_analyst', 'compliance_officer', 'admin'
+
 
 class RegisterRequest(BaseModel):
-    email: str
+    email: EmailStr
     password: str
     name: str
     role: Optional[str] = "soc_analyst"
     department: Optional[str] = "Fraud Operations"
 
+
 class ApiKeyCreateRequest(BaseModel):
     partner_name: str
     rate_limit: Optional[int] = 500
 
+
 @router.get("/personas")
 def get_available_personas():
-    """
-    Returns public demo personas for seamless 1-click evaluation.
-    """
+    """Returns public demo personas for seamless 1-click evaluation."""
     return {
         "personas": [
             {
@@ -64,11 +66,10 @@ def get_available_personas():
         ]
     }
 
+
 @router.post("/login")
 def login(req: LoginRequest, request: Request):
-    """
-    Authenticates via credentials OR instant 1-click persona selection.
-    """
+    """Authenticates via credentials OR instant 1-click persona selection."""
     client_ip = get_client_ip(request)
     check_rate_limit(f"auth_login_{client_ip}", max_requests=30, window_seconds=60)
 
@@ -84,11 +85,7 @@ def login(req: LoginRequest, request: Request):
             status="SUCCESS",
             details=f"Fast-track demo session established as {persona['name']} ({persona['role']})"
         )
-        return {
-            "access_token": token,
-            "token_type": "bearer",
-            "user": persona
-        }
+        return {"access_token": token, "token_type": "bearer", "user": persona}
 
     # 2. Standard Email/Password Login
     if not req.email or not req.password:
@@ -100,7 +97,7 @@ def login(req: LoginRequest, request: Request):
     user = USERS_DB.get(req.email.lower().strip())
     if not user or not verify_password(req.password, user["hashed_password"]):
         record_audit_event(
-            actor=req.email,
+            actor=str(req.email),
             role="unauthenticated",
             ip=client_ip,
             action="LOGIN_FAILED",
@@ -119,7 +116,7 @@ def login(req: LoginRequest, request: Request):
         ip=client_ip,
         action="LOGIN_SUCCESS_CREDENTIALS",
         status="SUCCESS",
-        details=f"User authenticated successfully via password credentials"
+        details="User authenticated successfully via password credentials"
     )
 
     return {
@@ -136,6 +133,7 @@ def login(req: LoginRequest, request: Request):
         }
     }
 
+
 @router.post("/register")
 def register(req: RegisterRequest, request: Request):
     client_ip = get_client_ip(request)
@@ -146,6 +144,9 @@ def register(req: RegisterRequest, request: Request):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered.")
 
     valid_role = req.role if req.role in ["soc_analyst", "compliance_officer", "admin"] else "soc_analyst"
+    # Self-registration cannot grant admin role
+    if valid_role == "admin":
+        valid_role = "soc_analyst"
 
     new_user = {
         "id": f"usr_{secrets.token_hex(4)}",
@@ -184,60 +185,65 @@ def register(req: RegisterRequest, request: Request):
         }
     }
 
+
 @router.get("/me")
 def get_me(user: Dict[str, Any] = Depends(get_current_user)):
     return {"user": user}
 
+
 @router.get("/audit-logs")
 def get_audit_logs(user: Dict[str, Any] = Depends(require_role(["compliance_officer", "admin"]))):
-    """
-    Returns immutable audit logs for compliance officers and system administrators.
-    """
+    """Returns immutable audit logs for compliance officers and system administrators."""
     return {
         "count": len(AUDIT_TRAIL),
         "audit_logs": AUDIT_TRAIL
     }
 
+
 @router.get("/api-keys")
 def list_api_keys(user: Dict[str, Any] = Depends(require_role(["admin"]))):
     """
     Returns registered external banking API keys (Admin only).
+    Raw keys are NEVER returned — only partner metadata and masked previews.
     """
     keys = []
-    for k, v in API_KEYS_DB.items():
-        masked_key = f"{k[:10]}...{k[-4:]}"
+    for hashed_key, v in API_KEYS_DB.items():
+        # Show only first 8 chars of hash as a non-reversible reference ID
+        preview = f"fs_key_...{hashed_key[-6:]}"
         keys.append({
-            "key_preview": masked_key,
-            "raw_key": k,
+            "key_ref": preview,
             "partner_name": v["partner_name"],
+            "role": v["role"],
+            "permissions": v.get("permissions", []),
             "rate_limit_per_min": v["rate_limit_per_min"],
             "is_active": v["is_active"]
         })
     return {"api_keys": keys}
 
+
 @router.post("/api-keys")
-def create_api_key(req: ApiKeyCreateRequest, user: Dict[str, Any] = Depends(require_role(["admin"]))):
+def create_api_key(req: ApiKeyCreateRequest, request: Request, user: Dict[str, Any] = Depends(require_role(["admin"]))):
     """
     Generates a new programmatic API key for external core banking integration.
+    The raw key is returned ONCE and must be stored securely by the caller.
+    It is NEVER stored in plaintext on the server.
     """
-    new_key = f"fs_live_{secrets.token_urlsafe(24)}"
-    API_KEYS_DB[new_key] = {
-        "partner_name": req.partner_name,
-        "role": "api_client",
-        "rate_limit_per_min": req.rate_limit or 500,
-        "is_active": True
-    }
+    raw_key = f"fs_live_{secrets.token_urlsafe(32)}"
+    store_api_key(raw_key, req.partner_name, req.rate_limit or 500)
+
     record_audit_event(
         actor=user["email"],
         role=user["role"],
-        ip="internal",
+        ip=get_client_ip(request),
         action="API_KEY_CREATED",
         status="SUCCESS",
         details=f"Generated API key for partner '{req.partner_name}'"
     )
     return {
-        "message": "API Key generated successfully. Store it securely.",
-        "api_key": new_key,
+        "message": "API Key generated successfully. Store it securely — it will NOT be shown again.",
+        "api_key": raw_key,      # Shown ONCE at creation only
         "partner_name": req.partner_name,
-        "rate_limit_per_min": req.rate_limit or 500
+        "rate_limit_per_min": req.rate_limit or 500,
+        "role": "api_client",
+        "permissions": ["analyze_transactions", "read_telemetry"]
     }

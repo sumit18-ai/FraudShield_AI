@@ -10,9 +10,13 @@ services:
     envVars:
       - key: PORT
         value: 8008
+      - key: ENV
+        value: production
       - key: ALLOWED_ORIGINS
-        value: "*"
+        # Set this to your actual Render/Vercel frontend URL after deployment
+        value: "https://fraudshield-frontend.onrender.com,https://fraudshield-ai.vercel.app"
       - key: JWT_SECRET_KEY
+        # Render auto-generates a cryptographically secure random value
         generateValue: true
 
   - type: web

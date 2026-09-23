@@ -1,6 +1,9 @@
 import shap
 import numpy as np
 from typing import Dict, Any, List
+from .logger import get_logger
+
+logger = get_logger(__name__)
 
 explainer = None
 
@@ -10,14 +13,14 @@ def init_explainer(model):
         if hasattr(model, 'named_estimators_') and 'xgb' in model.named_estimators_:
             xgb_model = model.named_estimators_['xgb']
             explainer = shap.TreeExplainer(xgb_model)
-            print("TreeSHAP Explainer loaded successfully from XGBoost base estimator.")
+            logger.info("treeshap_explainer_loaded", source="xgb_named_estimator")
         elif hasattr(model, 'estimators_'):
             explainer = shap.TreeExplainer(model.estimators_[0])
-            print("TreeSHAP Explainer loaded successfully from first estimator.")
+            logger.info("treeshap_explainer_loaded", source="first_estimator")
         else:
-            print("Custom tree model; fallback explainer available.")
+            logger.warning("treeshap_explainer_fallback", reason="no_supported_estimator")
     except Exception as e:
-        print(f"Notice during explainer initialization: {e}")
+        logger.warning("treeshap_explainer_init_notice", error=str(e))
 
 def generate_plain_english_reason_codes(
     feature_impacts: List[Dict[str, Any]],

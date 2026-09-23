@@ -2,6 +2,9 @@ import os
 import joblib
 import pandas as pd
 import json
+from .logger import get_logger
+
+logger = get_logger(__name__)
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 models_dir = os.path.join(os.path.dirname(os.path.dirname(current_dir)), 'models')
@@ -53,11 +56,11 @@ def load_models():
                 domain_models[domain_key] = m_obj
                 domain_scalers[domain_key] = s_obj
                 domain_metadata[domain_key] = meta_obj
-                print(f"Loaded Domain Model Head: '{domain_key}'")
+                logger.info("domain_model_loaded", domain=domain_key)
             except Exception as e:
-                print(f"Error loading domain '{domain_key}': {e}")
+                logger.error("domain_model_load_failed", domain=domain_key, error=str(e))
         else:
-            print(f"Domain model head '{domain_key}' not found at {m_path}, fallback available.")
+            logger.warning("domain_model_not_found", domain=domain_key, path=m_path)
 
     # Set default pointers for backward compatibility
     global model, scaler, feature_metadata

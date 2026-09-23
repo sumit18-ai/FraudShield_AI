@@ -3,6 +3,9 @@ from typing import Dict, Any, List, Tuple
 from .graph_engine import graph_engine
 from .anomaly_engine import anomaly_engine
 from .behavioral_engine import behavioral_engine
+from .logger import get_logger
+
+logger = get_logger(__name__)
 
 class AdaptiveMultiSignalRiskEngine:
     def __init__(self):
@@ -31,7 +34,7 @@ class AdaptiveMultiSignalRiskEngine:
         # Rule 1: Extreme Transfer Volume Threshold ($200k+)
         if amount >= 200000.0:
             rule_score += 0.35
-            triggered_rules.append("POLICY-RULE-101: High-value transaction exceeding ₹200,000 / $200,000 regulatory reporting threshold")
+            triggered_rules.append("POLICY-RULE-101: High-value transaction exceeding $200,000 regulatory reporting threshold")
 
         # Rule 2: Zero Balance Liquidation on Transfer/Cash-Out
         if tx_type in ["TRANSFER", "CASH_OUT"] and old_orig > 10000.0 and new_orig == 0.0:
