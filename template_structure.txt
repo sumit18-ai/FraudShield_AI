@@ -1,0 +1,250 @@
+=== SECTIONS (13) ===
+Section 0: Top=1.07, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 1: Top=0.44, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 2: Top=0.61, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 3: Top=1.21, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 4: Top=1.26, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 5: Top=1.26, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 6: Top=1.17, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 7: Top=0.94, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 8: Top=0.94, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 9: Top=1.26, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 10: Top=0.96, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 11: Top=0.94, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+Section 12: Top=0.94, Bottom=0.19, Left=0.25, Right=0.00
+  Header runs: 0
+
+=== PARAGRAPHS (175) ===
+P  0 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None]: 
+P  1 [Normal] (align=CENTER (1)) runs=[None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None]: Project Report (Part I)
+P  2 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None]: on
+P  3 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 14 pt>
+P  4 [Title] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Project Title
+P  5 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 24 pt bold single spacing>
+P  6 [Normal] (align=None) runs=[None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True, None/12.0pt/B=None/I=True]: Submitted in partial fulfillment for the award of the degree of
+P  7 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 12 pt Italic>
+P  8 [Heading 1] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: BACHELOR OF ENGINEERING
+P  9 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 16 pt>
+P 10 [Normal] (align=CENTER (1)) runs=[None/12.0pt/B=None/I=True]: In
+P 11 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 12 pt Italic>
+P 12 [Heading 1] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: COMPUTER ENGINEERING
+P 13 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 16 pt> Submitted by
+P 14 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 12 pt> Name of Group Member 1 Name of Group Member 2 Name of Group Member 3
+P 15 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 12 pt>
+P 16 [Body Text] (align=None) runs=[]: 
+P 17 [Normal] (align=CENTER (1)) runs=[None/12.0pt/B=True/I=True, None/12.0pt/B=True/I=True, None/12.0pt/B=True/I=True, None/12.0pt/B=True/I=True, None/12.0pt/B=True/I=True, None/12.0pt/B=True/I=True, None/12.0pt/B=True/I=True]: Under the Guidance of
+P 18 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 12 pt. Bold, Italic >
+P 19 [Heading 3] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Guide Name
+P 20 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 14 pt, Bold,>
+P 21 [Body Text] (align=None) runs=[]: 
+P 22 [Heading 3] (align=None) runs=[None/Nonept/B=None/I=None]: Designation
+P 23 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 14 pt, Bold >
+P 24 [Body Text] (align=None) runs=[]: 
+P 25 [Heading 3] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Department of Computer Engineering  (Academic Year. 2026-27)
+P 26 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 14 pt. Bold >
+P 27 [Body Text] (align=CENTER (1)) runs=[]: 
+P 28 [Body Text] (align=CENTER (1)) runs=[None/7.0pt/B=None/I=None]: 
+P 29 [Body Text] (align=None) runs=[]: 
+P 30 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None]: 
+P 31 [Body Text] (align=None) runs=[]: 
+P 32 [Body Text] (align=None) runs=[]: 
+P 33 [Heading 1] (align=None) runs=[None/Nonept/B=None/I=None]: CERTIFICATE
+P 34 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 16 pt bold>
+P 35 [Body Text] (align=None) runs=[]: 
+P 36 [Normal] (align=JUSTIFY (3)) runs=[None/14.0pt/B=None/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=None/I=None]: This is to certify that the project entitled “Title of project” is a bonafide work of Name of student 1 (Roll No.), Name of student 2 (Roll No.) Name of student 3(Roll No.) submitted to the Thakur College of Engineering and Technology, Mumbai (An Autonomous College affiliated to University of Mumbai) in partial fulfillment of the requirement for the Project-I for award of the degree of “Bachelor of Engineering” in “Computer Engineering”.
+P 37 [Body Text] (align=None) runs=[]: 
+P 38 [Body Text] (align=None) runs=[]: 
+P 39 [Body Text] (align=None) runs=[]: 
+P 40 [Body Text] (align=None) runs=[]: 
+P 41 [Body Text] (align=None) runs=[]: 
+P 42 [Body Text] (align=None) runs=[]: 
+P 43 [Body Text] (align=None) runs=[]: 
+P 44 [Body Text] (align=None) runs=[]: 
+P 45 [Table Paragraph] (align=None) runs=[]: 
+P 46 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None]: 
+P 47 [Normal] (align=CENTER (1)) runs=[None/18.0pt/B=True/I=None, None/18.0pt/B=True/I=None, None/18.0pt/B=True/I=None, None/18.0pt/B=True/I=None, None/18.0pt/B=True/I=None]: PROJECT APPROVAL CERTIFICATE
+P 48 [Body Text] (align=None) runs=[]: 
+P 49 [Body Text] (align=None) runs=[]: 
+P 50 [Normal] (align=JUSTIFY (3)) runs=[None/14.0pt/B=None/I=None, None/14.0pt/B=True/I=True, None/14.0pt/B=None/I=None, None/14.0pt/B=True/I=True, None/14.0pt/B=True/I=True, None/14.0pt/B=True/I=True, None/14.0pt/B=True/I=True, None/14.0pt/B=None/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=None/I=None]: This project report entitled “Title” by Name of student 1 (Roll No.), Name of student 2 (Roll No.) Name of student 3(Roll No.) is approved for the degree of “Bachelor of Engineering” in “Computer Engineering”.
+P 51 [Body Text] (align=None) runs=[]: 
+P 52 [Body Text] (align=None) runs=[]: 
+P 53 [Body Text] (align=None) runs=[]: 
+P 54 [Body Text] (align=None) runs=[]: 
+P 55 [Body Text] (align=None) runs=[]: 
+P 56 [Body Text] (align=None) runs=[]: 
+P 57 [Body Text] (align=None) runs=[]: 
+P 58 [Body Text] (align=None) runs=[]: 
+P 59 [Table Paragraph] (align=None) runs=[]: 
+P 60 [Heading 1] (align=None) runs=[None/Nonept/B=None/I=None]: ACKNOWLEDGEMENT
+P 61 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 16 pt Bold>
+P 62 [Body Text] (align=None) runs=[]: 
+P 63 [Body Text] (align=None) runs=[]: 
+P 64 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: It would be unfair if I do not acknowledge the help and support given by Professors, students, friends etc.
+P 65 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: We sincerely thank our guide Mr./Ms./Dr	for his/her guidance and constant
+P 66 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: support and also for the stick to our backs. We also thank the project coordinators for arranging the necessary facilities to carry out the project work.
+P 67 [Body Text] (align=None) runs=[]: 
+P 68 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: We thank the HOD, Dr. Vaishali Kaiche, the Principal, Dr. B. K. Mishra and the college management for their support.
+P 69 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 12 pt ><Line Spacing 1.5>
+P 70 [Body Text] (align=None) runs=[]: 
+P 71 [Body Text] (align=None) runs=[]: 
+P 72 [Body Text] (align=None) runs=[]: 
+P 73 [Body Text] (align=None) runs=[]: 
+P 74 [Body Text] (align=None) runs=[]: 
+P 75 [Body Text] (align=None) runs=[]: 
+P 76 [Body Text] (align=None) runs=[]: 
+P 77 [Body Text] (align=None) runs=[]: 
+P 78 [Body Text] (align=None) runs=[]: 
+P 79 [Body Text] (align=None) runs=[]: 
+P 80 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: 1.
+P 81 [Body Text] (align=None) runs=[]: 
+P 82 [Body Text] (align=None) runs=[]: 
+P 83 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: 2.
+P 84 [Body Text] (align=None) runs=[]: 
+P 85 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: 3.
+P 86 [Body Text] (align=None) runs=[]: 
+P 87 [Body Text] (align=None) runs=[]: 
+P 88 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: (Name of Student and Roll No.)
+P 89 [Body Text] (align=None) runs=[]: 
+P 90 [Body Text] (align=None) runs=[]: 
+P 91 [Normal] (align=CENTER (1)) runs=[None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None, None/16.0pt/B=None/I=None, None/16.0pt/B=None/I=None, None/16.0pt/B=None/I=None, None/16.0pt/B=None/I=None]: Blue Book Plagiarism Report (From department Turnitin account only)
+P 92 [Normal] (align=None) runs=[]: 
+P 93 [Heading 1] (align=None) runs=[None/Nonept/B=None/I=None]: INDEX
+P 94 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 16pt Bold>
+P 95 [Table Paragraph] (align=None) runs=[]: 
+P 96 [Table Paragraph] (align=None) runs=[]: 
+P 97 [Heading 4] (align=None) runs=[None/Nonept/B=None/I=None]: References
+P 98 [Normal] (align=None) runs=[None/12.0pt/B=True/I=None, None/12.0pt/B=True/I=None, None/12.0pt/B=True/I=None]: Research Paper
+P 99 [Normal] (align=None) runs=[None/12.0pt/B=True/I=None, None/12.0pt/B=True/I=None, None/12.0pt/B=True/I=None]: Appendix A
+P100 [List Paragraph] (align=None) runs=[None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None]: Abbreviation and symbols
+P101 [Heading 4] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Appendix B
+P102 [List Paragraph] (align=None) runs=[None/12.0pt/B=None/I=None]: Definitions
+P103 [Heading 4] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Appendix C
+P104 [List Paragraph] (align=None) runs=[None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None]: List of Publications
+P105 [Normal] (align=None) runs=[]: 
+P106 [List Paragraph] (align=None) runs=[]: 
+P107 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 12 pt>
+P108 [Heading 2] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: List of Figures
+P109 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 16pt Bold>
+P110 [Body Text] (align=None) runs=[]: 
+P111 [Body Text] (align=None) runs=[]: 
+P112 [Body Text] (align=None) runs=[]: 
+P113 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Figure 1: …………………………….	Page No Figure 2: ……………………………..
+P114 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Figure 3: ……………………………..
+P115 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Figure 4: ……………………………..
+P116 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Figure 5: ……………………………..
+P117 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Figure 6: ……………………………..
+P118 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Figure 7: ……………………………….
+P119 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Figure 8: ……………………………….
+P120 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Figure 9: ………………………………..
+P121 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Figure 10: ………………………………
+P122 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Figure 11: ……………………………..
+P123 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 12 pt>
+P124 [Body Text] (align=CENTER (1)) runs=[]: 
+P125 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 12 pt>
+P126 [Heading 2] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: List of Tables
+P127 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 16pt Bold>
+P128 [Body Text] (align=None) runs=[]: 
+P129 [Body Text] (align=None) runs=[]: 
+P130 [Body Text] (align=None) runs=[]: 
+P131 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Table 1: …………………………….	Page No Table 2: ……………………………..
+P132 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Table 3: ……………………………..
+P133 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Table 4: ……………………………..
+P134 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Table 5: ……………………………..
+P135 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Table 6: ……………………………..
+P136 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Table 7: ……………………………….
+P137 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Table 8: ……………………………….
+P138 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Table 9: ………………………………..
+P139 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Table 10: ………………………………
+P140 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 12 pt>
+P141 [Body Text] (align=CENTER (1)) runs=[]: 
+P142 [Normal] (align=CENTER (1)) runs=[None/18.0pt/B=True/I=None, None/18.0pt/B=True/I=None, None/18.0pt/B=True/I=None, None/18.0pt/B=True/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None]: Chapter 1 (18 Times New Roman)
+P143 [Normal] (align=CENTER (1)) runs=[None/18.0pt/B=True/I=None, None/18.0pt/B=True/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None, None/18.0pt/B=None/I=None]: Introduction (18 Times New Roman)
+P144 [List Paragraph] (align=None) runs=[None/16.0pt/B=True/I=None, None/16.0pt/B=True/I=None, None/16.0pt/B=True/I=None, None/16.0pt/B=True/I=None, None/16.0pt/B=None/I=None, None/16.0pt/B=None/I=None, None/16.0pt/B=None/I=None, None/16.0pt/B=None/I=None, None/16.0pt/B=None/I=None, None/16.0pt/B=None/I=None, None/16.0pt/B=None/I=None]: (Chapter Heading) (16 Times New Roman)
+P145 [Body Text] (align=None) runs=[]: 
+P146 [Body Text] (align=None) runs=[]: 
+P147 [List Paragraph] (align=None) runs=[None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=True/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None, None/14.0pt/B=None/I=None]: Formatting Guidelines (14 Times New Roman)
+P148 [List Paragraph] (align=None) runs=[]: 
+P149 [Heading 2] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/14.0pt/B=None/I=None]: Appendix A
+P150 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 16 pt Bold>
+P151 [Body Text] (align=None) runs=[]: 
+P152 [Heading 3] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Abbreviation and Symbols
+P153 [Body Text] (align=CENTER (1)) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: <Times New Roman 12 pt Bold>
+P154 [Body Text] (align=None) runs=[]: 
+P155 [Body Text] (align=None) runs=[]: 
+P156 [List Paragraph] (align=None) runs=[None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None]: Abbreviation1/Symbol1: Meaning
+P157 [List Paragraph] (align=None) runs=[None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None]: Abbreviation2/Symbol2: Meaning
+P158 [List Paragraph] (align=None) runs=[None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None]: ​
+P159 [List Paragraph] (align=None) runs=[None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None]: ​
+P160 [List Paragraph] (align=None) runs=[None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None]: ​
+P161 [List Paragraph] (align=None) runs=[None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None]: ​
+P162 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: < Times New Roman 12pt >
+P163 [Body Text] (align=None) runs=[]: 
+P164 [Heading 3] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Appendix B
+P165 [Normal] (align=None) runs=[None/14.0pt/B=True/I=None]: Definitions
+P166 [List Paragraph] (align=None) runs=[None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None]: Term1: It’s Definition
+P167 [List Paragraph] (align=None) runs=[None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None, None/12.0pt/B=None/I=None]: Term2: It’s Definition 3.
+P168 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: 4.
+P169 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: 5.
+P170 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: 6.
+P171 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: < Times New Roman 12pt >
+P172 [Body Text] (align=None) runs=[]: 
+P173 [Heading 3] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Appendix C
+P174 [Body Text] (align=None) runs=[None/Nonept/B=None/I=None, None/Nonept/B=None/I=None, None/Nonept/B=None/I=None]: Publications (IEEE Format):
+
+=== TABLES (3) ===
+Table 0: 1 rows, 2 cols
+  R0: ['Signature with Date: ----------------- Name of Guide: Designation:', 'Signature with Date: -------------------- Name of HOD: Name of Department:']
+Table 1: 3 rows, 1 cols
+  R0: ['Internal Examiner:\tExternal Examiner:']
+  R1: ['Signature:\tSignature:   Name:\tName:']
+  R2: ['Date: Place:']
+Table 2: 37 rows, 4 cols
+  R0: ['Chapter No.', 'Topic<Times New Roman 12 pt Bold>', 'Topic<Times New Roman 12 pt Bold>', 'Page No.']
+  R1: ['', 'List of Figures', 'List of Figures', 'I']
+  R2: ['', 'List of Tables', 'List of Tables', 'II']
+  R3: ['', 'Abstract', 'Abstract', 'III']
+  R4: ['Chapter 1', 'Introduction', 'Introduction', '']
+  R5: ['', '1.1', 'Overview of the Project', '']
+  R6: ['', '1.2', 'Motivation & Application', '']
+  R7: ['', '1.3', 'Problem Definition', '']
+  R8: ['', '1.4', 'Objective & Scope', '']
+  R9: ['', '1.5', 'Expected outcome', '']
+  R10: ['', '1.6', 'Organization of the Report', '']
+  R11: ['Chapter 2', 'Literature Survey & Proposed System', 'Literature Survey & Proposed System', '']
+  R12: ['', '2.1', 'Literature review of Existing System', '']
+  R13: ['', '2.2', 'Limitations of Existing System & Gap Analysis', '']
+  R14: ['', '2.3', 'Proposed System', '']
+  R15: ['Chapter 3', 'Requirement Gathering, Analysis and Planning', 'Requirement Gathering, Analysis and Planning', '']
+  R16: ['', '3.1', 'Requirement Specification', '']
+  R17: ['', '3.2', 'Feasibility Study', '']
+  R18: ['', '3.3', 'Methodology', '']
+  R19: ['', '3.4', 'Technology Stack', '']
+  R20: ['', '3.5', 'Gantt Chart and Process Model', '']
+  R21: ['', '3.6', 'System Analysis (Functional, Structural, and Behavioral Models)', '']
+  R22: ['Chapter 4', 'System Design and Experimental Set up', 'System Design and Experimental Set up', '']
+  R23: ['', '4.1', 'System Architecture & Diagrams (DFD/UML/ Block Diagram/Physical Layout)', '']
+  R24: ['', '4.2', 'Algorithm & Process flow design (Flowchart/Pseudo Code)', '']
+  R25: ['', '4.3', 'User Interface & Input Data Design (Snapshots/ circuits/Structure)', '']
+  R26: ['', '4.4', 'Experimental Setup and Tools (Software & Hardware)', '']
+  R27: ['', '4.5', 'Implementation, Deployment and Testing', '']
+  R28: ['', '4.6', 'Performance Evaluation.', '']
+  R29: ['', '4.7', 'Summary', '']
+  R30: ['Chapter 5', 'Results & Discussion', 'Results & Discussion', '']
+  R31: ['', '5.1', 'Outputs & Outcomes', '']
+  R32: ['', '5.2', 'Analysis of Results & Interpretation of data', '']
+  R33: ['', '5.3', 'Discussion of Results & Limitations of the System', '']
+  R34: ['Chapter 6', 'Conclusion & Future Scope', 'Conclusion & Future Scope', '']
+  R35: ['', '6.1', 'Summary of work completed', '']
+  R36: ['', '6.2', 'Future Scope', '']
