@@ -90,19 +90,20 @@ export function AuthProvider({ children }) {
         setToken(data.access_token);
         setIsAuthModalOpen(false);
         return { success: true, user: data.user };
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        const msg = errData.detail || 'Login failed. Please verify the security server is running.';
+        setAuthError(msg);
+        return { success: false, error: msg };
       }
     } catch (err) {
-      console.warn('Backend offline or unreachable during persona login, activating local persona session.', err);
+      console.error('Backend offline or unreachable during persona login.', err);
+      const msg = 'Backend offline — please ensure the server is running.';
+      setAuthError(msg);
+      return { success: false, error: msg };
     } finally {
       setIsLoading(false);
     }
-
-    // Offline / fallback persona switch
-    const fallbackUser = DEFAULT_DEMO_PERSONAS[personaId] || DEFAULT_DEMO_PERSONAS.soc_analyst;
-    setUser(fallbackUser);
-    setToken(`simulated_jwt_token_${personaId}`);
-    setIsAuthModalOpen(false);
-    return { success: true, user: fallbackUser };
   };
 
   // Standard credentials login

@@ -39,15 +39,29 @@ class FederatedLearningSimulator:
         self.current_round = 1
         self.max_rounds = 20
         self.epsilon_privacy_budget = 1.25 # Differential privacy epsilon
+        self.disclaimer = (
+            "DEMO SIMULATION: Metrics and federated consensus rounds are simulated for demonstration "
+            "and architectural validation. Production deployment requires active Flower/PySyft decentralized client nodes."
+        )
         self.global_history = [
             {
                 "round": 1,
                 "global_auc": 0.912,
                 "global_recall": 0.841,
                 "global_loss": 0.241,
-                "client_weights_applied": {"bank_alpha": 0.33, "bank_beta": 0.19, "bank_gamma": 0.48}
+                "client_weights_applied": self._compute_client_weights()
             }
         ]
+
+    def _compute_client_weights(self) -> Dict[str, float]:
+        """Dynamically compute FedAvg weights proportional to private sample volume."""
+        total_tx = sum(b["private_tx_count"] for b in self.banks.values())
+        if total_tx <= 0:
+            return {k: round(1.0 / len(self.banks), 4) for k in self.banks}
+        return {
+            k: round(v["private_tx_count"] / total_tx, 4)
+            for k, v in self.banks.items()
+        }
 
     def run_federated_round(self) -> Dict[str, Any]:
         """
@@ -84,16 +98,14 @@ class FederatedLearningSimulator:
             "global_auc": new_auc,
             "global_recall": new_recall,
             "global_loss": new_loss,
-            "client_weights_applied": {
-                "bank_alpha": 0.33,
-                "bank_beta": 0.19,
-                "bank_gamma": 0.48
-            }
+            "client_weights_applied": self._compute_client_weights()
         }
         self.global_history.append(round_entry)
 
         return {
             "status": "SUCCESS",
+            "simulation_mode": True,
+            "disclaimer": self.disclaimer,
             "current_round": self.current_round,
             "global_auc": new_auc,
             "global_recall": new_recall,
@@ -108,12 +120,15 @@ class FederatedLearningSimulator:
         """Returns the current state and performance matrix of the Federated Defense Network."""
         latest = self.global_history[-1]
         return {
+            "simulation_mode": True,
+            "disclaimer": self.disclaimer,
             "current_round": self.current_round,
             "max_rounds": self.max_rounds,
             "global_auc": latest["global_auc"],
             "global_recall": latest["global_recall"],
             "global_loss": latest["global_loss"],
             "privacy_budget_epsilon": self.epsilon_privacy_budget,
+            "client_weights_applied": self._compute_client_weights(),
             "participating_banks": list(self.banks.values()),
             "round_history": self.global_history,
             "research_benefits": [

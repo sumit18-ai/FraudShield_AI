@@ -90,6 +90,18 @@ export function FederatedLearningModule() {
   return (
     <div className="space-y-6">
       
+      {/* Demo Simulation Disclaimer Banner */}
+      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start sm:items-center justify-between gap-3 text-amber-900">
+        <div className="flex items-center gap-2.5">
+          <span className="px-2 py-0.5 rounded-md bg-amber-500 text-white text-[10px] font-extrabold tracking-wider uppercase shrink-0">
+            Demo Simulation
+          </span>
+          <p className="text-xs text-amber-800">
+            Federated averaging (FedAvg) rounds and multi-bank consensus metrics are simulated for architecture demonstration. Live multi-tenant deployment integrates decentralized Flower / PySyft worker nodes.
+          </p>
+        </div>
+      </div>
+
       {/* Top Banner */}
       <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>

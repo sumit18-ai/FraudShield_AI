@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Request, Depends
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
-from ..schemas.transaction import Transaction
 from ..core.explainer import get_explanations
 from ..core.risk_engine import risk_engine
 from ..core.graph_engine import graph_engine
@@ -70,6 +69,8 @@ async def analyze_transaction(
     user: Optional[Dict[str, Any]] = Depends(get_current_user_optional)
 ):
     import app.core.model_engine as engine
+    if len(engine.domain_models) == 0:
+        engine.load_models()
 
     client_ip = get_client_ip(request)
     # Anti-abuse rate limiter: 120 req/minute per IP
@@ -139,6 +140,16 @@ async def analyze_transaction(
 
     # 4. Log into Concept Drift Monitor window
     drift_monitor.log_incoming_transaction(payload_dict)
+
+    # 4b. Dynamically ingest transaction into Graph Intelligence Network (CRIT-3)
+    graph_engine.add_transaction({
+        **payload_dict,
+        "nameOrig": sender,
+        "nameDest": receiver,
+        "device_id": device,
+        "ip_address": ip,
+        "isFraud": 1 if risk_output["decision"] == "Block" else 0
+    })
 
     # 5. TreeSHAP & Reason Code Generation
     feat_names = meta["features"] if meta and "features" in meta else list(payload_dict.keys())

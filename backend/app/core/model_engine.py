@@ -2,7 +2,18 @@ import os
 import joblib
 import pandas as pd
 import json
+import sys
 from .logger import get_logger
+from .omni_smote import OmniSMOTE, FeatureSpaceScoring, MultipleLinearInterpolation
+
+# Ensure OmniSMOTE is resolvable if models were serialized with various module prefixes
+try:
+    from . import omni_smote as _omni_mod
+    sys.modules['omni_smote'] = _omni_mod
+except Exception:
+    pass
+if '__main__' in sys.modules and not hasattr(sys.modules['__main__'], 'OmniSMOTE'):
+    setattr(sys.modules['__main__'], 'OmniSMOTE', OmniSMOTE)
 
 logger = get_logger(__name__)
 
@@ -13,6 +24,9 @@ models_dir = os.path.join(os.path.dirname(os.path.dirname(current_dir)), 'models
 domain_models = {}
 domain_scalers = {}
 domain_metadata = {}
+model = None
+scaler = None
+feature_metadata = None
 
 def patch_logistic_regression(obj):
     from sklearn.linear_model import LogisticRegression

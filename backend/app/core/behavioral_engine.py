@@ -57,8 +57,8 @@ class CustomerBehavioralProfiler:
         # Scale z-score: z=0 -> 0.0, z=3 -> 0.6, z=6+ -> 0.95
         amount_deviation_score = min(1.0, z_score / 6.0)
 
-        # 2. Time-of-day off-hours check (e.g. 2 AM - 5 AM unusual burst)
-        is_off_hours = hour_of_day not in typical_hours and (hour_of_day < 6 or hour_of_day > 23)
+        # 2. Time-of-day off-hours check (e.g. 11 PM - 5 AM unusual burst)
+        is_off_hours = hour_of_day not in typical_hours and (hour_of_day < 6 or hour_of_day >= 23)
         time_deviation_score = 0.45 if is_off_hours else 0.0
 
         # 3. New Recipient Flag
